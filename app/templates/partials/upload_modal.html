@@ -43,9 +43,12 @@
             ondragleave="handleDragLeave(event)"
             ondrop="handleDrop(event)"
           >
-            <svg class="mx-auto h-12 w-12 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"></path>
-            </svg>
+            <div id="drop-zone-icon" class="mx-auto h-12 w-12 mb-4">
+              <!-- 기본: 클라우드 업로드 아이콘 -->
+              <svg class="h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"></path>
+              </svg>
+            </div>
             <p class="text-sm text-gray-600 mb-1">
               <span class="font-medium text-indigo-600 hover:text-indigo-700">파일을 선택</span>하거나 여기에 드래그하세요
             </p>
@@ -123,9 +126,31 @@
 </div>
 
 <script>
+  const defaultIcon = '<svg class="h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"></path></svg>';
+
+  const fileIcons = {
+    pdf: '<svg class="h-12 w-12 text-red-500" fill="currentColor" viewBox="0 0 20 20"><path d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z"></path></svg>',
+    image: '<svg class="h-12 w-12 text-green-500" fill="currentColor" viewBox="0 0 20 20"><path clip-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" fill-rule="evenodd"></path></svg>',
+    default: '<svg class="h-12 w-12 text-gray-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd"></path></svg>'
+  };
+
+  function getFileIcon(filename) {
+    const ext = filename.split('.').pop().toLowerCase();
+    if (ext === 'pdf') return fileIcons.pdf;
+    if (['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg'].includes(ext)) return fileIcons.image;
+    return fileIcons.default;
+  }
+
+  function updateDropZone(file) {
+    document.getElementById('drop-zone-icon').innerHTML = getFileIcon(file.name);
+    document.getElementById('drop-zone-filename').textContent = file.name + ' (' + formatFileSize(file.size) + ')';
+    document.getElementById('drop-zone').classList.add('border-indigo-400', 'bg-indigo-50');
+  }
+
   function closeUploadModal() {
     document.getElementById('upload-modal').classList.add('hidden');
     document.getElementById('upload-form').reset();
+    document.getElementById('drop-zone-icon').innerHTML = defaultIcon;
     document.getElementById('drop-zone-filename').textContent = '선택된 파일 없음';
     document.getElementById('drop-zone').classList.remove('border-indigo-400', 'bg-indigo-50');
     document.getElementById('upload-error').classList.add('hidden');
@@ -133,10 +158,7 @@
 
   function handleFileSelect(event) {
     const file = event.target.files[0];
-    if (file) {
-      document.getElementById('drop-zone-filename').textContent = file.name + ' (' + formatFileSize(file.size) + ')';
-      document.getElementById('drop-zone').classList.add('border-indigo-400', 'bg-indigo-50');
-    }
+    if (file) updateDropZone(file);
   }
 
   function handleDragOver(event) {
@@ -157,8 +179,7 @@
       const dataTransfer = new DataTransfer();
       dataTransfer.items.add(file);
       input.files = dataTransfer.files;
-      document.getElementById('drop-zone-filename').textContent = file.name + ' (' + formatFileSize(file.size) + ')';
-      document.getElementById('drop-zone').classList.add('border-indigo-400', 'bg-indigo-50');
+      updateDropZone(file);
     }
   }
 
