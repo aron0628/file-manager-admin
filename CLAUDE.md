@@ -42,6 +42,7 @@ Tests use `sqlite+aiosqlite:///./test.db`. The `postgresql.UUID` column type is 
 | `DB_NAME` | `app_db` | 데이터베이스명 |
 | `DB_USER` | `app_user` | 접속 계정 |
 | `DB_PASSWORD` | `password` | 접속 비밀번호 (특수문자 그대로 입력 가능) |
+| `UPLOAD_DIR` | `uploads` | 파일 업로드 저장 경로 |
 | `PARSER_SERVER_URL` | `http://localhost:9997` | Base URL of the document-parser-server |
 | `MAX_UPLOAD_SIZE_MB` | `50` | Maximum upload size in megabytes |
 | `ALLOWED_MIME_TYPES` | `["application/pdf"]` | List of accepted MIME types |

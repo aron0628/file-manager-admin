@@ -11,7 +11,7 @@ from app.constants import Category
 from app.models.tables import File
 from app.schemas.file import FileListResponse, FileResponse, FileUpdate
 
-UPLOADS_DIR = Path("uploads")
+UPLOADS_DIR = Path(settings.UPLOAD_DIR)
 
 
 def _get_safe_stored_path(file_uuid: uuid.UUID, ext: str) -> Path:

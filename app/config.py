@@ -10,6 +10,7 @@ class Settings(BaseSettings):
     DB_USER: str = "app_user"
     DB_PASSWORD: str = "password"
 
+    UPLOAD_DIR: str = "uploads"
     PARSER_SERVER_URL: str = "http://localhost:9997"
     MAX_UPLOAD_SIZE_MB: int = 50
     ALLOWED_MIME_TYPES: list[str] = ["application/pdf"]
