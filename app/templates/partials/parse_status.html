@@ -30,7 +30,7 @@
     <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
       <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
     </svg>
-    파싱 완료
+    완료
     {% elif status == 'failed' %}
     <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
       <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
@@ -56,4 +56,35 @@
   >
     미파싱
   </span>
+{% endif %}
+
+{# OOB swap: 상태가 완료/실패로 바뀌면 액션 버튼도 함께 업데이트 #}
+{% if parse_job and parse_job.status == 'completed' %}
+<div id="parse-action-{{ file_id }}" hx-swap-oob="outerHTML">
+  <a
+    href="/api/files/{{ file_id }}/parse-result"
+    title="파싱 결과 다운로드"
+    class="inline-flex items-center px-2.5 py-1.5 text-xs font-medium rounded-md text-indigo-700 bg-indigo-50 hover:bg-indigo-100 transition-colors"
+  >
+    <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+    </svg>
+    다운로드
+  </a>
+</div>
+{% elif parse_job and parse_job.status in ['failed', 'error', 'timeout', 'lost'] %}
+<div id="parse-action-{{ file_id }}" hx-swap-oob="outerHTML">
+  <button
+    type="button"
+    class="inline-flex items-center px-2.5 py-1.5 text-xs font-medium rounded-md text-red-700 bg-red-50 hover:bg-red-100 transition-colors"
+    hx-post="/api/files/{{ file_id }}/parse"
+    hx-target="#file-table-container"
+    hx-swap="innerHTML"
+  >
+    <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+    </svg>
+    재시도
+  </button>
+</div>
 {% endif %}

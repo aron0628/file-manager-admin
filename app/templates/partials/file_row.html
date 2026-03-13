@@ -154,6 +154,7 @@
 
   <!-- Parse Action -->
   <td class="px-4 py-4 whitespace-nowrap text-center">
+    <div id="parse-action-{{ file.id }}">
     {% if latest_job and latest_job.status == 'completed' %}
       <a
         href="/api/files/{{ file.id }}/parse-result"
@@ -179,6 +180,7 @@
         재시도
       </button>
     {% endif %}
+    </div>
   </td>
 
   <!-- Actions -->
