@@ -42,7 +42,7 @@ async def upload_file(
     if len(content) > max_bytes:
         raise HTTPException(
             status_code=413,
-            detail=f"File too large. Maximum size is {settings.MAX_UPLOAD_SIZE_MB}MB",
+            detail=f"파일이 너무 큽니다. 최대 {settings.MAX_UPLOAD_SIZE_MB}MB까지 업로드 가능합니다.",
         )
 
     # Determine extension from original filename

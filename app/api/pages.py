@@ -7,6 +7,7 @@ from fastapi.templating import Jinja2Templates
 from sqlalchemy import and_, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.config import settings
 from app.database import get_db
 from app.models.tables import File
 
@@ -82,6 +83,7 @@ async def index(
             "search": search or "",
             "file_type": file_type or "",
             "date_range": date_range or "",
+            "max_upload_size_mb": settings.MAX_UPLOAD_SIZE_MB,
         },
     )
 

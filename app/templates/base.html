@@ -10,6 +10,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
   <!-- HTMX -->
   <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+  <script src="https://unpkg.com/htmx.org@1.9.10/dist/ext/json-enc.js"></script>
   <style>
     body {
       font-family: 'Inter', sans-serif;
@@ -23,6 +24,20 @@
     /* HTMX loading indicator */
     .htmx-request .htmx-indicator { display: inline-block; }
     .htmx-indicator { display: none; }
+
+    /* 글로벌 로딩 오버레이 */
+    #global-loading {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      background: rgba(255, 255, 255, 0.5);
+      align-items: center;
+      justify-content: center;
+    }
+    #global-loading.active {
+      display: flex;
+    }
   </style>
   {% block head %}{% endblock %}
 </head>
@@ -41,6 +56,35 @@
 
 <!-- Edit Modal -->
 {% include "partials/edit_modal.html" %}
+
+<!-- 글로벌 로딩 오버레이 -->
+<div id="global-loading">
+  <div class="flex flex-col items-center gap-2">
+    <svg class="animate-spin h-8 w-8 text-indigo-600" fill="none" viewBox="0 0 24 24">
+      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+    </svg>
+    <span class="text-sm text-gray-500 font-medium">처리 중...</span>
+  </div>
+</div>
+
+<script>
+  // 글로벌 HTMX 로딩 오버레이: 검색/필터 제외, 삭제/편집/업로드/페이지네이션에 표시
+  document.body.addEventListener('htmx:beforeRequest', function(e) {
+    const trigger = e.detail.elt;
+    // 검색 입력과 필터 드롭다운은 자체 인디케이터 사용 → 글로벌 스피너 제외
+    if (trigger.matches('input[name="search"], select[name="file_type"], select[name="date_range"]')) return;
+    // 파싱 상태 폴링(every 3s)도 제외
+    if (trigger.id && trigger.id.startsWith('parse-status-')) return;
+    document.getElementById('global-loading').classList.add('active');
+  });
+  document.body.addEventListener('htmx:afterRequest', function() {
+    document.getElementById('global-loading').classList.remove('active');
+  });
+  document.body.addEventListener('htmx:responseError', function() {
+    document.getElementById('global-loading').classList.remove('active');
+  });
+</script>
 
 {% block scripts %}{% endblock %}
 </body>

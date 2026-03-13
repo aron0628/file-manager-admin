@@ -10,7 +10,7 @@
   {% elif category == 'HR' %}
     <span class="px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">인사</span>
   {% else %}
-    <span class="px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">{{ category }}</span>
+    <span class="px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">미분류</span>
   {% endif %}
 {% endmacro %}
 
@@ -89,7 +89,7 @@
 
   <!-- Date -->
   <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-    {{ file.created_at.strftime('%b %d, %Y') }}
+    {{ file.created_at.strftime('%Y년 %m월 %d일') }}
   </td>
 
   <!-- Actions -->
@@ -124,8 +124,8 @@
       class="text-gray-400 hover:text-red-600 transition-colors"
       hx-delete="/api/files/{{ file.id }}"
       hx-confirm="정말 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다."
-      hx-target="#file-row-{{ file.id }}"
-      hx-swap="outerHTML"
+      hx-target="#file-table-container"
+      hx-swap="innerHTML"
     >
       <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
