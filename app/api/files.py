@@ -8,6 +8,7 @@ from fastapi.responses import FileResponse as FastAPIFileResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy import and_, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.constants import Category
 from app.database import get_db
@@ -51,7 +52,7 @@ async def upload_file(
 
     # HTMX 요청이면 파일 테이블 HTML partial 반환
     if request.headers.get("HX-Request"):
-        stmt = select(FileModel).order_by(FileModel.created_at.desc()).limit(20)
+        stmt = select(FileModel).options(selectinload(FileModel.parse_jobs)).order_by(FileModel.created_at.desc()).limit(20)
         db_result = await db.execute(stmt)
         files = db_result.scalars().all()
 
@@ -103,7 +104,10 @@ async def update_file(
 
     # HTMX 요청이면 파일 행 HTML partial 반환
     if request.headers.get("HX-Request"):
-        db_file = await file_service.get_file_orm(db, file_id)
+        from app.models.tables import File as FileORM
+        stmt = select(FileORM).options(selectinload(FileORM.parse_jobs)).where(FileORM.id == file_id)
+        db_result = await db.execute(stmt)
+        db_file = db_result.scalar_one()
         return templates.TemplateResponse(
             "partials/file_row.html",
             {"request": request, "file": db_file},
@@ -122,7 +126,7 @@ async def delete_file(
 
     # HTMX 요청이면 갱신된 파일 테이블 HTML partial 반환
     if request.headers.get("HX-Request"):
-        stmt = select(FileModel).order_by(FileModel.created_at.desc()).limit(20)
+        stmt = select(FileModel).options(selectinload(FileModel.parse_jobs)).order_by(FileModel.created_at.desc()).limit(20)
         db_result = await db.execute(stmt)
         files = db_result.scalars().all()
 

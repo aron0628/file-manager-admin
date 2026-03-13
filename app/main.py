@@ -11,6 +11,10 @@ from app.config import settings
 from app.schemas.file import HealthResponse
 from app.services.background_sync import background_sync_loop, resync_pending_jobs
 
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+)
 logger = logging.getLogger(__name__)
 
 

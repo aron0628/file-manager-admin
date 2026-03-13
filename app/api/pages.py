@@ -6,6 +6,7 @@ from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy import and_, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.config import settings
 from app.database import get_db
@@ -63,7 +64,7 @@ async def index(
     offset = (page - 1) * page_size
     total_pages = (total + page_size - 1) // page_size if total > 0 else 0
 
-    stmt = select(File).order_by(File.created_at.desc()).offset(offset).limit(page_size)
+    stmt = select(File).options(selectinload(File.parse_jobs)).order_by(File.created_at.desc()).offset(offset).limit(page_size)
     if conditions:
         stmt = stmt.where(and_(*conditions))
 
@@ -112,7 +113,7 @@ async def file_table_partial(
     offset = (page - 1) * page_size
     total_pages = (total + page_size - 1) // page_size if total > 0 else 0
 
-    stmt = select(File).order_by(File.created_at.desc()).offset(offset).limit(page_size)
+    stmt = select(File).options(selectinload(File.parse_jobs)).order_by(File.created_at.desc()).offset(offset).limit(page_size)
     if conditions:
         stmt = stmt.where(and_(*conditions))
 

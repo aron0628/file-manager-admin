@@ -4,9 +4,12 @@ from pathlib import Path
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import FileResponse as FastAPIFileResponse, HTMLResponse
 from fastapi.templating import Jinja2Templates
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.database import get_db
+from app.models.tables import File as FileModel
 from app.schemas.file import ParseJobResponse
 from app.services import parse_service
 
@@ -25,7 +28,36 @@ async def start_parse(
     db: AsyncSession = Depends(get_db),
 ):
     parser_client = _get_parser_client(request)
-    return await parse_service.start_parse(db, file_id, parser_client)
+    result = await parse_service.start_parse(db, file_id, parser_client)
+
+    # HTMX 요청이면 파일 테이블 HTML partial 반환
+    if request.headers.get("HX-Request"):
+        stmt = select(FileModel).options(selectinload(FileModel.parse_jobs)).order_by(FileModel.created_at.desc()).limit(20)
+        db_result = await db.execute(stmt)
+        files = db_result.scalars().all()
+
+        total_stmt = select(FileModel)
+        total_result = await db.execute(total_stmt)
+        total = len(total_result.scalars().all())
+        total_pages = (total + 19) // 20 if total > 0 else 0
+
+        return templates.TemplateResponse(
+            "partials/file_table.html",
+            {
+                "request": request,
+                "files": files,
+                "total": total,
+                "page": 1,
+                "page_size": 20,
+                "total_pages": total_pages,
+                "offset": 0,
+                "search": "",
+                "file_type": "",
+                "date_range": "",
+            },
+        )
+
+    return result
 
 
 @router.get("/{file_id}/parse-status")
