@@ -1,0 +1,134 @@
+<!-- Edit Modal -->
+<div id="edit-modal" class="hidden fixed inset-0 z-50 overflow-y-auto" aria-labelledby="edit-modal-title" role="dialog" aria-modal="true">
+  <div class="flex min-h-screen items-center justify-center p-4">
+    <div
+      class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
+      onclick="closeEditModal()"
+    ></div>
+
+    <div class="relative bg-white rounded-xl shadow-xl w-full max-w-md z-10">
+      <!-- Header -->
+      <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+        <h2 id="edit-modal-title" class="text-lg font-semibold text-gray-900">파일 편집</h2>
+        <button
+          type="button"
+          onclick="closeEditModal()"
+          class="text-gray-400 hover:text-gray-600 transition-colors"
+        >
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path d="M6 18L18 6M6 6l12 12" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Form -->
+      <form
+        id="edit-form"
+        hx-put=""
+        hx-target=""
+        hx-swap="outerHTML"
+        hx-on::after-request="handleEditResponse(event)"
+      >
+        <div class="px-6 py-5 space-y-4">
+          <div>
+            <label for="edit-filename" class="block text-sm font-medium text-gray-700 mb-1">파일명</label>
+            <input
+              id="edit-filename"
+              type="text"
+              name="filename"
+              class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+              required
+            />
+          </div>
+
+          <div>
+            <label for="edit-category" class="block text-sm font-medium text-gray-700 mb-1">카테고리</label>
+            <select
+              id="edit-category"
+              name="category"
+              class="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+            >
+              <option value="Uncategorized">미분류</option>
+              <option value="Finance">재무</option>
+              <option value="Marketing">마케팅</option>
+              <option value="Admin">관리</option>
+              <option value="Legal">법무</option>
+              <option value="HR">인사</option>
+            </select>
+          </div>
+
+          <!-- Error area -->
+          <div id="edit-error" class="hidden bg-red-50 border border-red-200 rounded-lg px-4 py-3">
+            <p class="text-sm text-red-700" id="edit-error-text"></p>
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="px-6 py-4 border-t border-gray-200 flex items-center justify-end gap-3 bg-gray-50 rounded-b-xl">
+          <button
+            type="button"
+            onclick="closeEditModal()"
+            class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+          >
+            취소
+          </button>
+          <button
+            type="submit"
+            id="edit-submit-btn"
+            class="inline-flex items-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            저장
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+  function openEditModal(fileId, filename, category) {
+    const form = document.getElementById('edit-form');
+    form.setAttribute('hx-put', '/api/files/' + fileId);
+    form.setAttribute('hx-target', '#file-row-' + fileId);
+    htmx.process(form);
+
+    document.getElementById('edit-filename').value = filename;
+    const select = document.getElementById('edit-category');
+    for (let i = 0; i < select.options.length; i++) {
+      if (select.options[i].value === category) {
+        select.selectedIndex = i;
+        break;
+      }
+    }
+
+    document.getElementById('edit-error').classList.add('hidden');
+    document.getElementById('edit-modal').classList.remove('hidden');
+  }
+
+  function closeEditModal() {
+    document.getElementById('edit-modal').classList.add('hidden');
+  }
+
+  function handleEditResponse(event) {
+    const btn = document.getElementById('edit-submit-btn');
+    btn.disabled = false;
+
+    if (event.detail.successful) {
+      closeEditModal();
+    } else {
+      const errorDiv = document.getElementById('edit-error');
+      const errorText = document.getElementById('edit-error-text');
+      try {
+        const resp = JSON.parse(event.detail.xhr.responseText);
+        errorText.textContent = resp.detail || '저장 중 오류가 발생했습니다.';
+      } catch {
+        errorText.textContent = '저장 중 오류가 발생했습니다. (HTTP ' + event.detail.xhr.status + ')';
+      }
+      errorDiv.classList.remove('hidden');
+    }
+  }
+
+  document.getElementById('edit-form').addEventListener('htmx:beforeRequest', function() {
+    document.getElementById('edit-submit-btn').disabled = true;
+  });
+</script>

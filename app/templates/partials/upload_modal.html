@@ -1,0 +1,199 @@
+<!-- Upload Modal -->
+<div id="upload-modal" class="hidden fixed inset-0 z-50 overflow-y-auto" aria-labelledby="upload-modal-title" role="dialog" aria-modal="true">
+  <!-- Backdrop -->
+  <div class="flex min-h-screen items-center justify-center p-4">
+    <div
+      class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
+      onclick="closeUploadModal()"
+    ></div>
+
+    <!-- Modal panel -->
+    <div class="relative bg-white rounded-xl shadow-xl w-full max-w-lg z-10">
+      <!-- Header -->
+      <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+        <h2 id="upload-modal-title" class="text-lg font-semibold text-gray-900">새 파일 업로드</h2>
+        <button
+          type="button"
+          onclick="closeUploadModal()"
+          class="text-gray-400 hover:text-gray-600 transition-colors"
+        >
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path d="M6 18L18 6M6 6l12 12" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Form -->
+      <form
+        id="upload-form"
+        hx-post="/api/files/upload"
+        hx-encoding="multipart/form-data"
+        hx-target="#file-table-container"
+        hx-swap="outerHTML"
+        hx-on::after-request="handleUploadResponse(event)"
+      >
+        <div class="px-6 py-5 space-y-5">
+
+          <!-- Drag & Drop Area -->
+          <div
+            id="drop-zone"
+            class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-indigo-400 transition-colors cursor-pointer"
+            onclick="document.getElementById('file-input').click()"
+            ondragover="handleDragOver(event)"
+            ondragleave="handleDragLeave(event)"
+            ondrop="handleDrop(event)"
+          >
+            <svg class="mx-auto h-12 w-12 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"></path>
+            </svg>
+            <p class="text-sm text-gray-600 mb-1">
+              <span class="font-medium text-indigo-600 hover:text-indigo-700">파일을 선택</span>하거나 여기에 드래그하세요
+            </p>
+            <p id="drop-zone-filename" class="text-xs text-gray-400">선택된 파일 없음</p>
+          </div>
+
+          <!-- Hidden file input -->
+          <input
+            id="file-input"
+            type="file"
+            name="file"
+            accept=".pdf,application/pdf"
+            class="hidden"
+            onchange="handleFileSelect(event)"
+            required
+          />
+
+          <!-- File restriction notice -->
+          <div class="flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-lg px-4 py-3">
+            <svg class="w-4 h-4 text-amber-500 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+            </svg>
+            <p class="text-xs text-amber-700">
+              <strong>PDF 파일만 업로드 가능</strong>, 최대 50MB
+            </p>
+          </div>
+
+          <!-- Category selection -->
+          <div>
+            <label for="upload-category" class="block text-sm font-medium text-gray-700 mb-1">카테고리</label>
+            <select
+              id="upload-category"
+              name="category"
+              class="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+            >
+              <option value="Uncategorized">미분류</option>
+              <option value="Finance">재무</option>
+              <option value="Marketing">마케팅</option>
+              <option value="Admin">관리</option>
+              <option value="Legal">법무</option>
+              <option value="HR">인사</option>
+            </select>
+          </div>
+
+          <!-- Error message area -->
+          <div id="upload-error" class="hidden bg-red-50 border border-red-200 rounded-lg px-4 py-3">
+            <p class="text-sm text-red-700" id="upload-error-text"></p>
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="px-6 py-4 border-t border-gray-200 flex items-center justify-end gap-3 bg-gray-50 rounded-b-xl">
+          <button
+            type="button"
+            onclick="closeUploadModal()"
+            class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+          >
+            취소
+          </button>
+          <button
+            type="submit"
+            id="upload-submit-btn"
+            class="inline-flex items-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <svg id="upload-spinner" class="hidden animate-spin w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+            </svg>
+            업로드
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+  function closeUploadModal() {
+    document.getElementById('upload-modal').classList.add('hidden');
+    document.getElementById('upload-form').reset();
+    document.getElementById('drop-zone-filename').textContent = '선택된 파일 없음';
+    document.getElementById('drop-zone').classList.remove('border-indigo-400', 'bg-indigo-50');
+    document.getElementById('upload-error').classList.add('hidden');
+  }
+
+  function handleFileSelect(event) {
+    const file = event.target.files[0];
+    if (file) {
+      document.getElementById('drop-zone-filename').textContent = file.name + ' (' + formatFileSize(file.size) + ')';
+      document.getElementById('drop-zone').classList.add('border-indigo-400', 'bg-indigo-50');
+    }
+  }
+
+  function handleDragOver(event) {
+    event.preventDefault();
+    document.getElementById('drop-zone').classList.add('border-indigo-500', 'bg-indigo-50');
+  }
+
+  function handleDragLeave(event) {
+    document.getElementById('drop-zone').classList.remove('border-indigo-500', 'bg-indigo-50');
+  }
+
+  function handleDrop(event) {
+    event.preventDefault();
+    const dt = event.dataTransfer;
+    const file = dt.files[0];
+    if (file) {
+      const input = document.getElementById('file-input');
+      const dataTransfer = new DataTransfer();
+      dataTransfer.items.add(file);
+      input.files = dataTransfer.files;
+      document.getElementById('drop-zone-filename').textContent = file.name + ' (' + formatFileSize(file.size) + ')';
+      document.getElementById('drop-zone').classList.add('border-indigo-400', 'bg-indigo-50');
+    }
+  }
+
+  function formatFileSize(bytes) {
+    if (bytes >= 1024 * 1024) return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+    if (bytes >= 1024) return (bytes / 1024).toFixed(0) + ' KB';
+    return bytes + ' B';
+  }
+
+  function handleUploadResponse(event) {
+    const btn = document.getElementById('upload-submit-btn');
+    const spinner = document.getElementById('upload-spinner');
+    btn.disabled = false;
+    spinner.classList.add('hidden');
+
+    if (event.detail.successful) {
+      closeUploadModal();
+    } else {
+      const errorDiv = document.getElementById('upload-error');
+      const errorText = document.getElementById('upload-error-text');
+      try {
+        const resp = JSON.parse(event.detail.xhr.responseText);
+        errorText.textContent = resp.detail || '업로드 중 오류가 발생했습니다.';
+      } catch {
+        errorText.textContent = '업로드 중 오류가 발생했습니다. (HTTP ' + event.detail.xhr.status + ')';
+      }
+      errorDiv.classList.remove('hidden');
+    }
+  }
+
+  // Show spinner on submit
+  document.getElementById('upload-form').addEventListener('htmx:beforeRequest', function() {
+    const btn = document.getElementById('upload-submit-btn');
+    const spinner = document.getElementById('upload-spinner');
+    btn.disabled = true;
+    spinner.classList.remove('hidden');
+  });
+</script>

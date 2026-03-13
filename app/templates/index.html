@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Portal - File Manager{% endblock %}
+
+{% block content %}
+<!-- Header -->
+{% include "components/header.html" %}
+
+<!-- Content Container -->
+<div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden" data-purpose="file-list-container">
+  <!-- Filter Toolbar -->
+  {% include "components/filter_toolbar.html" %}
+
+  <!-- File Table (HTMX partial target) -->
+  {% include "partials/file_table.html" %}
+</div>
+{% endblock %}

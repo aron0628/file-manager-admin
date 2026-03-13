@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  <title>{% block title %}관리자 포털 - 파일 관리{% endblock %}</title>
+  <!-- Tailwind CSS v3 CDN with plugins -->
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <!-- Google Fonts: Inter -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <!-- HTMX -->
+  <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #f9fafb;
+    }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #f1f1f1; }
+    ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 10px; }
+    ::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
+
+    /* HTMX loading indicator */
+    .htmx-request .htmx-indicator { display: inline-block; }
+    .htmx-indicator { display: none; }
+  </style>
+  {% block head %}{% endblock %}
+</head>
+<body class="text-gray-900 antialiased">
+
+{% block body %}
+<main class="min-h-screen p-4 md:p-8">
+  <div class="max-w-7xl mx-auto">
+    {% block content %}{% endblock %}
+  </div>
+</main>
+{% endblock %}
+
+<!-- Upload Modal -->
+{% include "partials/upload_modal.html" %}
+
+<!-- Edit Modal -->
+{% include "partials/edit_modal.html" %}
+
+{% block scripts %}{% endblock %}
+</body>
+</html>
