@@ -4,7 +4,12 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
-    DATABASE_URL: str = "postgresql+asyncpg://app_user:password@localhost:5432/app_db"
+    DB_HOST: str = "localhost"
+    DB_PORT: int = 5432
+    DB_NAME: str = "app_db"
+    DB_USER: str = "app_user"
+    DB_PASSWORD: str = "password"
+
     PARSER_SERVER_URL: str = "http://localhost:9997"
     MAX_UPLOAD_SIZE_MB: int = 50
     ALLOWED_MIME_TYPES: list[str] = ["application/pdf"]

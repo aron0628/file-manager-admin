@@ -4,7 +4,7 @@ FastAPI-based admin UI for uploading PDF files and triggering document parsing v
 
 ## Tech Stack
 
-- **Python 3.12** with `uv` package manager
+- **Python 3.13** with `uv` package manager
 - **FastAPI** — async REST API + Jinja2 HTML pages
 - **SQLAlchemy 2.0 async** (`asyncpg` for PostgreSQL)
 - **Alembic** — database migrations
@@ -37,7 +37,11 @@ Tests use `sqlite+aiosqlite:///./test.db`. The `postgresql.UUID` column type is 
 
 | Variable | Default | Description |
 |---|---|---|
-| `DATABASE_URL` | PostgreSQL connection string | Async SQLAlchemy URL (`postgresql+asyncpg://...`) |
+| `DB_HOST` | `localhost` | PostgreSQL 호스트 |
+| `DB_PORT` | `5432` | PostgreSQL 포트 |
+| `DB_NAME` | `app_db` | 데이터베이스명 |
+| `DB_USER` | `app_user` | 접속 계정 |
+| `DB_PASSWORD` | `password` | 접속 비밀번호 (특수문자 그대로 입력 가능) |
 | `PARSER_SERVER_URL` | `http://localhost:9997` | Base URL of the document-parser-server |
 | `MAX_UPLOAD_SIZE_MB` | `50` | Maximum upload size in megabytes |
 | `ALLOWED_MIME_TYPES` | `["application/pdf"]` | List of accepted MIME types |
