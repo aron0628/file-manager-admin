@@ -4,6 +4,7 @@
 import asyncio
 import logging
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
 
 import httpx
 from sqlalchemy import select
@@ -12,6 +13,8 @@ from app.config import settings
 from app.constants import ACTIVE_PARSE_STATUSES, ParseJobStatus
 from app.database import AsyncSessionLocal
 from app.models.tables import ParseJob
+
+_PARSE_RESULTS_DIR = Path(settings.PARSE_RESULT_DIR)
 
 logger = logging.getLogger(__name__)
 
@@ -110,6 +113,20 @@ async def _process_jobs_batch(parser_client, jobs: list[ParseJob]) -> None:
                         if db_job.completed_at is None:
                             db_job.completed_at = now
                         logger.info(f"job {db_job.id}: status={new_status} 완료 처리")
+
+                    # completed 상태이고 아직 result_path가 없으면 자동 다운로드
+                    if new_status == ParseJobStatus.COMPLETED.value and not db_job.result_path:
+                        try:
+                            _PARSE_RESULTS_DIR.mkdir(parents=True, exist_ok=True)
+                            zip_path, _ = await parser_client.download_result(
+                                job_id=db_job.parser_job_id,
+                                output_dir=str(_PARSE_RESULTS_DIR),
+                                extract=False,
+                            )
+                            db_job.result_path = str(zip_path)
+                            logger.info(f"job {db_job.id}: 파싱 결과 자동 다운로드 완료 → {zip_path}")
+                        except Exception as e:
+                            logger.warning(f"job {db_job.id}: 파싱 결과 자동 다운로드 실패: {e}")
 
         await db.commit()
 

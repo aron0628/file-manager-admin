@@ -17,7 +17,7 @@ from app.schemas.file import ParseJobResponse
 
 logger = logging.getLogger(__name__)
 
-_PARSE_RESULTS_DIR = Path("parse_results")
+_PARSE_RESULTS_DIR = Path(settings.PARSE_RESULT_DIR)
 
 
 async def start_parse(
