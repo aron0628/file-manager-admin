@@ -10,7 +10,8 @@ from sqlalchemy.orm import selectinload
 
 from app.config import settings
 from app.database import get_db
-from app.models.tables import File
+from app.dependencies import require_auth
+from app.models.tables import File, User
 
 router = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
@@ -50,6 +51,7 @@ async def index(
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=20, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
+    user: User = Depends(require_auth),
 ):
     conditions = _build_file_query(search, file_type, date_range)
 
@@ -75,6 +77,7 @@ async def index(
         "index.html",
         {
             "request": request,
+            "user": user,
             "files": files,
             "total": total,
             "page": page,
@@ -98,6 +101,7 @@ async def file_table_partial(
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=20, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
+    user: User = Depends(require_auth),
 ):
     """HTMX partial endpoint - returns only the file table HTML."""
     conditions = _build_file_query(search, file_type, date_range)

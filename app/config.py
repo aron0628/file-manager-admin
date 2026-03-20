@@ -18,5 +18,9 @@ class Settings(BaseSettings):
     PARSE_POLL_INTERVAL_SECONDS: int = 10
     PARSE_MAX_CONCURRENT_CHECKS: int = 20
 
+    # Auth
+    SECRET_KEY: str = "dev-secret-key-change-in-production"
+    SESSION_EXPIRE_HOURS: int = 24
+
 
 settings = Settings()

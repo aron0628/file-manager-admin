@@ -12,7 +12,9 @@ from sqlalchemy.orm import selectinload
 
 from app.constants import Category
 from app.database import get_db
+from app.dependencies import require_auth
 from app.models.tables import File as FileModel
+from app.models.tables import User as UserModel
 from app.schemas.file import FileListResponse, FileResponse, FileUpdate
 from app.services import file_service
 
@@ -29,6 +31,7 @@ async def list_files(
     page: int = Query(default=1, ge=1),
     per_page: int = Query(default=20, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
+    user: UserModel = Depends(require_auth),
 ):
     return await file_service.get_files(
         db,
@@ -47,8 +50,9 @@ async def upload_file(
     file: UploadFile = File(...),
     category: Category = Form(default=Category.UNCATEGORIZED),
     db: AsyncSession = Depends(get_db),
+    user: UserModel = Depends(require_auth),
 ):
-    result = await file_service.upload_file(db, file, category)
+    result = await file_service.upload_file(db, file, category, uploader=user.display_name)
 
     # HTMX 요청이면 파일 테이블 HTML partial 반환
     if request.headers.get("HX-Request"):
@@ -84,6 +88,7 @@ async def upload_file(
 async def get_file(
     file_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
+    user: UserModel = Depends(require_auth),
 ):
     return await file_service.get_file(db, file_id)
 
@@ -94,6 +99,7 @@ async def update_file(
     request: Request,
     body: FileUpdate,
     db: AsyncSession = Depends(get_db),
+    user: UserModel = Depends(require_auth),
 ):
     result = await file_service.update_file(
         db,
@@ -121,6 +127,7 @@ async def delete_file(
     file_id: uuid.UUID,
     request: Request,
     db: AsyncSession = Depends(get_db),
+    user: UserModel = Depends(require_auth),
 ):
     await file_service.delete_file(db, file_id)
 
@@ -158,6 +165,7 @@ async def delete_file(
 async def download_file(
     file_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
+    user: UserModel = Depends(require_auth),
 ):
     db_file = await file_service.get_file_orm(db, file_id)
     stored = Path(db_file.stored_path)

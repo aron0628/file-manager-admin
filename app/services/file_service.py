@@ -28,6 +28,7 @@ async def upload_file(
     db: AsyncSession,
     file: UploadFile,
     category: Category,
+    uploader: str = "Admin",
 ) -> FileResponse:
     # MIME type validation
     if file.content_type not in settings.ALLOWED_MIME_TYPES:
@@ -69,6 +70,7 @@ async def upload_file(
         file_size=len(content),
         mime_type=file.content_type,
         category=category.value,
+        uploader=uploader,
     )
     db.add(db_file)
     await db.commit()

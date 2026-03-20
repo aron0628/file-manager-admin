@@ -23,9 +23,9 @@ def ensure_uploads_dir(tmp_path, monkeypatch):
     yield
 
 
-async def _upload_pdf(client: AsyncClient, filename: str = "parse_test.pdf") -> dict:
+async def _upload_pdf(authenticated_client: AsyncClient, filename: str = "parse_test.pdf") -> dict:
     """Upload a PDF and return the full response JSON."""
-    resp = await client.post(
+    resp = await authenticated_client.post(
         "/api/files/upload",
         files={"file": (filename, io.BytesIO(make_pdf_bytes()), "application/pdf")},
         data={"category": "Uncategorized"},
@@ -53,13 +53,13 @@ def _make_stored_path_exist(file_data: dict, tmp_path: Path) -> Path:
 # ---------------------------------------------------------------------------
 
 @pytest.mark.asyncio
-async def test_start_parse(client: AsyncClient, tmp_path, mock_parser_client):
+async def test_start_parse(authenticated_client: AsyncClient, tmp_path, mock_parser_client):
     """POST /{file_id}/parse calls parser_client.parse_pdf and returns 202."""
-    file_data = await _upload_pdf(client)
+    file_data = await _upload_pdf(authenticated_client)
     stored = _make_stored_path_exist(file_data, tmp_path)
 
     try:
-        response = await client.post(f"/api/files/{file_data['id']}/parse")
+        response = await authenticated_client.post(f"/api/files/{file_data['id']}/parse")
         assert response.status_code == 202
         data = response.json()
         assert data["parser_job_id"] == "test-job-123"
@@ -70,16 +70,16 @@ async def test_start_parse(client: AsyncClient, tmp_path, mock_parser_client):
 
 
 @pytest.mark.asyncio
-async def test_start_parse_no_server(client: AsyncClient, tmp_path):
+async def test_start_parse_no_server(authenticated_client: AsyncClient, tmp_path):
     """POST /{file_id}/parse when parser_client is None returns 503."""
-    file_data = await _upload_pdf(client)
+    file_data = await _upload_pdf(authenticated_client)
     stored = _make_stored_path_exist(file_data, tmp_path)
 
     from app.main import app as the_app
     the_app.state.parser_client = None
 
     try:
-        response = await client.post(f"/api/files/{file_data['id']}/parse")
+        response = await authenticated_client.post(f"/api/files/{file_data['id']}/parse")
         assert response.status_code == 503
     finally:
         stored.unlink(missing_ok=True)
@@ -93,16 +93,16 @@ async def test_start_parse_no_server(client: AsyncClient, tmp_path):
 # ---------------------------------------------------------------------------
 
 @pytest.mark.asyncio
-async def test_parse_status(client: AsyncClient, tmp_path):
+async def test_parse_status(authenticated_client: AsyncClient, tmp_path):
     """GET /{file_id}/parse-status returns DB-cached status as JSON."""
-    file_data = await _upload_pdf(client)
+    file_data = await _upload_pdf(authenticated_client)
     stored = _make_stored_path_exist(file_data, tmp_path)
 
     try:
-        parse_resp = await client.post(f"/api/files/{file_data['id']}/parse")
+        parse_resp = await authenticated_client.post(f"/api/files/{file_data['id']}/parse")
         assert parse_resp.status_code == 202
 
-        status_resp = await client.get(f"/api/files/{file_data['id']}/parse-status")
+        status_resp = await authenticated_client.get(f"/api/files/{file_data['id']}/parse-status")
         assert status_resp.status_code == 200
         data = status_resp.json()
         assert data["file_id"] == file_data["id"]
@@ -113,15 +113,15 @@ async def test_parse_status(client: AsyncClient, tmp_path):
 
 
 @pytest.mark.asyncio
-async def test_parse_status_htmx(client: AsyncClient, tmp_path):
+async def test_parse_status_htmx(authenticated_client: AsyncClient, tmp_path):
     """GET /{file_id}/parse-status with HX-Request header returns HTML partial."""
-    file_data = await _upload_pdf(client)
+    file_data = await _upload_pdf(authenticated_client)
     stored = _make_stored_path_exist(file_data, tmp_path)
 
     try:
-        await client.post(f"/api/files/{file_data['id']}/parse")
+        await authenticated_client.post(f"/api/files/{file_data['id']}/parse")
 
-        status_resp = await client.get(
+        status_resp = await authenticated_client.get(
             f"/api/files/{file_data['id']}/parse-status",
             headers={"HX-Request": "true"},
         )
@@ -133,10 +133,10 @@ async def test_parse_status_htmx(client: AsyncClient, tmp_path):
 
 
 @pytest.mark.asyncio
-async def test_parse_status_no_job(client: AsyncClient):
+async def test_parse_status_no_job(authenticated_client: AsyncClient):
     """GET /{file_id}/parse-status without any parse job returns 404."""
-    file_data = await _upload_pdf(client)
-    status_resp = await client.get(f"/api/files/{file_data['id']}/parse-status")
+    file_data = await _upload_pdf(authenticated_client)
+    status_resp = await authenticated_client.get(f"/api/files/{file_data['id']}/parse-status")
     assert status_resp.status_code == 404
 
 
@@ -145,14 +145,14 @@ async def test_parse_status_no_job(client: AsyncClient):
 # ---------------------------------------------------------------------------
 
 @pytest.mark.asyncio
-async def test_parse_result_not_ready(client: AsyncClient, tmp_path):
+async def test_parse_result_not_ready(authenticated_client: AsyncClient, tmp_path):
     """GET /{file_id}/parse-result when job is pending returns 409."""
-    file_data = await _upload_pdf(client)
+    file_data = await _upload_pdf(authenticated_client)
     stored = _make_stored_path_exist(file_data, tmp_path)
 
     try:
-        await client.post(f"/api/files/{file_data['id']}/parse")
-        result_resp = await client.get(f"/api/files/{file_data['id']}/parse-result")
+        await authenticated_client.post(f"/api/files/{file_data['id']}/parse")
+        result_resp = await authenticated_client.get(f"/api/files/{file_data['id']}/parse-result")
         assert result_resp.status_code == 409
     finally:
         stored.unlink(missing_ok=True)

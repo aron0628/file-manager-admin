@@ -15,6 +15,9 @@ dependencies = [
     "httpx>=0.27.0",
     "pydantic-settings>=2.0.0",
     "document-parser-client",
+    "passlib[bcrypt]>=1.7.4",
+    "bcrypt>=4.0.0",
+    "itsdangerous>=2.1.0",
 ]
 
 [tool.uv.sources]

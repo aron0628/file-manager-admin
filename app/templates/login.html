@@ -1,0 +1,55 @@
+{% extends "auth_base.html" %}
+
+{% block title %}로그인 | File Manager{% endblock %}
+
+{% block auth_content %}
+<!-- Header -->
+<div class="mb-10 text-center">
+  <div class="inline-flex items-center justify-center mb-6">
+    <span class="material-symbols-outlined text-[#4648d4] text-4xl">cloud_done</span>
+    <span class="ml-2 text-2xl font-extrabold tracking-tight text-indigo-700 font-headline">File Manager</span>
+  </div>
+  <h1 class="font-headline font-extrabold text-[#191c1e] tracking-tight text-4xl mb-3">Welcome Back</h1>
+  <p class="text-[#464554]">안전한 파일 관리 시스템에 로그인하세요.</p>
+</div>
+
+<!-- Form Card -->
+<div class="bg-white rounded-xl p-8 md:p-10 shadow-[0_32px_64px_-12px_rgba(25,28,30,0.04)] ring-1 ring-[#c7c4d7]/10">
+  {% if error %}
+  <div class="mb-6 p-3 rounded-lg bg-red-50 text-red-700 text-sm">
+    {{ error }}
+  </div>
+  {% endif %}
+
+  <form action="/auth/login" method="post" class="space-y-6">
+    <!-- Login ID -->
+    <div class="space-y-2">
+      <label class="block text-[0.7rem] font-bold uppercase tracking-widest text-[#464554] px-1" for="login_id">사용자 ID 또는 이메일</label>
+      <input class="w-full bg-[#f2f4f6] border-none rounded-xl px-4 py-3.5 text-[#191c1e] placeholder:text-[#767586]/50 focus:ring-2 focus:ring-[#4648d4]/40 transition-all duration-200 outline-none" id="login_id" name="login_id" placeholder="user123 또는 name@company.com" type="text" required/>
+    </div>
+
+    <!-- Password -->
+    <div class="space-y-2">
+      <div class="flex justify-between items-center px-1">
+        <label class="block text-[0.7rem] font-bold uppercase tracking-widest text-[#464554]" for="password">비밀번호</label>
+      </div>
+      <input class="w-full bg-[#f2f4f6] border-none rounded-xl px-4 py-3.5 text-[#191c1e] placeholder:text-[#767586]/50 focus:ring-2 focus:ring-[#4648d4]/40 transition-all duration-200 outline-none" id="password" name="password" placeholder="••••••••" type="password" required/>
+    </div>
+
+    <!-- Submit -->
+    <div class="pt-4">
+      <button class="w-full bg-gradient-to-br from-[#4648d4] to-[#6063ee] text-white font-semibold py-4 rounded-lg shadow-lg shadow-[#4648d4]/20 hover:opacity-90 active:scale-[0.98] transition-all duration-200" type="submit">
+        로그인
+      </button>
+    </div>
+  </form>
+</div>
+
+<!-- Footer links -->
+<div class="mt-8 text-center">
+  <p class="text-[#464554] text-sm">
+    계정이 없으신가요?
+    <a class="text-[#4648d4] font-bold hover:underline underline-offset-4 ml-1" href="/signup">회원가입</a>
+  </p>
+</div>
+{% endblock %}

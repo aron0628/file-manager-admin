@@ -5,9 +5,10 @@ from contextlib import asynccontextmanager
 import httpx
 from fastapi import FastAPI
 
-from app.api import files, parse
+from app.api import auth, files, parse
 from app.api.pages import router as pages_router
 from app.config import settings
+from app.dependencies import _AuthRedirectException
 from app.schemas.file import HealthResponse
 from app.services.background_sync import background_sync_loop, resync_pending_jobs
 
@@ -76,6 +77,13 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+
+@app.exception_handler(_AuthRedirectException)
+async def auth_redirect_handler(request, exc):
+    return exc.response
+
+
+app.include_router(auth.router)
 app.include_router(pages_router)
 app.include_router(files.router)
 app.include_router(parse.router)

@@ -34,10 +34,10 @@ def ensure_uploads_dir(tmp_path, monkeypatch):
 # ---------------------------------------------------------------------------
 
 @pytest.mark.asyncio
-async def test_upload_pdf(client: AsyncClient):
+async def test_upload_pdf(authenticated_client: AsyncClient):
     """PDF upload returns 201 and stores UUID-based path."""
     pdf_bytes = make_pdf_bytes(512)
-    response = await client.post(
+    response = await authenticated_client.post(
         "/api/files/upload",
         files={"file": ("test.pdf", io.BytesIO(pdf_bytes), "application/pdf")},
         data={"category": "Finance"},
@@ -55,9 +55,9 @@ async def test_upload_pdf(client: AsyncClient):
 
 
 @pytest.mark.asyncio
-async def test_upload_invalid_mime(client: AsyncClient):
+async def test_upload_invalid_mime(authenticated_client: AsyncClient):
     """Non-PDF upload returns 415."""
-    response = await client.post(
+    response = await authenticated_client.post(
         "/api/files/upload",
         files={"file": ("test.txt", io.BytesIO(b"hello"), "text/plain")},
         data={"category": "Uncategorized"},
@@ -66,7 +66,7 @@ async def test_upload_invalid_mime(client: AsyncClient):
 
 
 @pytest.mark.asyncio
-async def test_upload_oversized(client: AsyncClient):
+async def test_upload_oversized(authenticated_client: AsyncClient):
     """File exceeding MAX_UPLOAD_SIZE_MB returns 413."""
     import app.config as cfg
 
@@ -75,7 +75,7 @@ async def test_upload_oversized(client: AsyncClient):
 
     try:
         oversized = make_pdf_bytes(10)
-        response = await client.post(
+        response = await authenticated_client.post(
             "/api/files/upload",
             files={"file": ("big.pdf", io.BytesIO(oversized), "application/pdf")},
             data={"category": "Uncategorized"},
@@ -90,15 +90,15 @@ async def test_upload_oversized(client: AsyncClient):
 # ---------------------------------------------------------------------------
 
 @pytest.mark.asyncio
-async def test_list_files(client: AsyncClient):
+async def test_list_files(authenticated_client: AsyncClient):
     """Uploading a file then listing returns it."""
-    await client.post(
+    await authenticated_client.post(
         "/api/files/upload",
         files={"file": ("list_test.pdf", io.BytesIO(make_pdf_bytes()), "application/pdf")},
         data={"category": "HR"},
     )
 
-    response = await client.get("/api/files")
+    response = await authenticated_client.get("/api/files")
     assert response.status_code == 200
     data = response.json()
     assert data["total"] >= 1
@@ -107,15 +107,15 @@ async def test_list_files(client: AsyncClient):
 
 
 @pytest.mark.asyncio
-async def test_list_files_search(client: AsyncClient):
+async def test_list_files_search(authenticated_client: AsyncClient):
     """Search filter returns matching files only."""
-    await client.post(
+    await authenticated_client.post(
         "/api/files/upload",
         files={"file": ("searchable_doc.pdf", io.BytesIO(make_pdf_bytes()), "application/pdf")},
         data={"category": "Legal"},
     )
 
-    response = await client.get("/api/files?search=searchable_doc")
+    response = await authenticated_client.get("/api/files?search=searchable_doc")
     assert response.status_code == 200
     data = response.json()
     assert data["total"] >= 1
@@ -123,15 +123,15 @@ async def test_list_files_search(client: AsyncClient):
 
 
 @pytest.mark.asyncio
-async def test_list_files_category(client: AsyncClient):
+async def test_list_files_category(authenticated_client: AsyncClient):
     """Category filter returns only files with that category."""
-    await client.post(
+    await authenticated_client.post(
         "/api/files/upload",
         files={"file": ("cat_test.pdf", io.BytesIO(make_pdf_bytes()), "application/pdf")},
         data={"category": "Marketing"},
     )
 
-    response = await client.get("/api/files?category=Marketing")
+    response = await authenticated_client.get("/api/files?category=Marketing")
     assert response.status_code == 200
     data = response.json()
     assert data["total"] >= 1
@@ -143,31 +143,31 @@ async def test_list_files_category(client: AsyncClient):
 # ---------------------------------------------------------------------------
 
 @pytest.mark.asyncio
-async def test_get_file(client: AsyncClient):
+async def test_get_file(authenticated_client: AsyncClient):
     """Single file retrieval by ID."""
-    upload_resp = await client.post(
+    upload_resp = await authenticated_client.post(
         "/api/files/upload",
         files={"file": ("get_test.pdf", io.BytesIO(make_pdf_bytes()), "application/pdf")},
         data={"category": "Admin"},
     )
     file_id = upload_resp.json()["id"]
 
-    response = await client.get(f"/api/files/{file_id}")
+    response = await authenticated_client.get(f"/api/files/{file_id}")
     assert response.status_code == 200
     assert response.json()["id"] == file_id
 
 
 @pytest.mark.asyncio
-async def test_update_file(client: AsyncClient):
+async def test_update_file(authenticated_client: AsyncClient):
     """Updating filename and category persists correctly."""
-    upload_resp = await client.post(
+    upload_resp = await authenticated_client.post(
         "/api/files/upload",
         files={"file": ("update_test.pdf", io.BytesIO(make_pdf_bytes()), "application/pdf")},
         data={"category": "Uncategorized"},
     )
     file_id = upload_resp.json()["id"]
 
-    response = await client.put(
+    response = await authenticated_client.put(
         f"/api/files/{file_id}",
         json={"filename": "renamed.pdf", "category": "Finance"},
     )
@@ -178,24 +178,24 @@ async def test_update_file(client: AsyncClient):
 
 
 @pytest.mark.asyncio
-async def test_delete_file(client: AsyncClient):
+async def test_delete_file(authenticated_client: AsyncClient):
     """Deleted file returns 204 and subsequent GET returns 404."""
-    upload_resp = await client.post(
+    upload_resp = await authenticated_client.post(
         "/api/files/upload",
         files={"file": ("delete_test.pdf", io.BytesIO(make_pdf_bytes()), "application/pdf")},
         data={"category": "Uncategorized"},
     )
     file_id = upload_resp.json()["id"]
 
-    del_resp = await client.delete(f"/api/files/{file_id}")
+    del_resp = await authenticated_client.delete(f"/api/files/{file_id}")
     assert del_resp.status_code == 204
 
-    get_resp = await client.get(f"/api/files/{file_id}")
+    get_resp = await authenticated_client.get(f"/api/files/{file_id}")
     assert get_resp.status_code == 404
 
 
 @pytest.mark.asyncio
-async def test_download_file(client: AsyncClient, tmp_path, monkeypatch):
+async def test_download_file(authenticated_client: AsyncClient, tmp_path, monkeypatch):
     """Download endpoint returns the correct file bytes."""
     import app.services.file_service as fs
     import app.api.files as files_api
@@ -208,7 +208,7 @@ async def test_download_file(client: AsyncClient, tmp_path, monkeypatch):
     # to the tmp dir and making the stored_path resolve correctly.
 
     pdf_bytes = make_pdf_bytes(256)
-    upload_resp = await client.post(
+    upload_resp = await authenticated_client.post(
         "/api/files/upload",
         files={"file": ("download_test.pdf", io.BytesIO(pdf_bytes), "application/pdf")},
         data={"category": "Uncategorized"},
@@ -226,7 +226,7 @@ async def test_download_file(client: AsyncClient, tmp_path, monkeypatch):
     shutil.copy2(src, dest)
 
     try:
-        dl_resp = await client.get(f"/api/files/{file_id}/download")
+        dl_resp = await authenticated_client.get(f"/api/files/{file_id}/download")
         assert dl_resp.status_code == 200
         assert dl_resp.content == pdf_bytes
     finally:

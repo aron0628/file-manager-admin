@@ -9,7 +9,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.database import get_db
+from app.dependencies import require_auth
 from app.models.tables import File as FileModel
+from app.models.tables import User as UserModel
 from app.schemas.file import ParseJobResponse
 from app.services import parse_service
 
@@ -26,6 +28,7 @@ async def start_parse(
     file_id: uuid.UUID,
     request: Request,
     db: AsyncSession = Depends(get_db),
+    user: UserModel = Depends(require_auth),
 ):
     parser_client = _get_parser_client(request)
     result = await parse_service.start_parse(db, file_id, parser_client)
@@ -65,6 +68,7 @@ async def get_parse_status(
     file_id: uuid.UUID,
     request: Request,
     db: AsyncSession = Depends(get_db),
+    user: UserModel = Depends(require_auth),
 ):
     """
     파싱 상태 조회.
@@ -109,6 +113,7 @@ async def get_parse_result(
     file_id: uuid.UUID,
     request: Request,
     db: AsyncSession = Depends(get_db),
+    user: UserModel = Depends(require_auth),
 ):
     parser_client = _get_parser_client(request)
     result_path = await parse_service.get_parse_result(db, file_id, parser_client)

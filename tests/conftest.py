@@ -57,7 +57,7 @@ _pg_base.UUID = _SQLiteUUID  # type: ignore[attr-defined]
 # App imports (use patched UUID)
 from app.database import Base, get_db  # noqa: E402
 from app.main import app  # noqa: E402
-from app.models.tables import File, ParseJob  # noqa: E402
+from app.models.tables import File, ParseJob, User  # noqa: E402
 
 # ---------------------------------------------------------------------------
 # Engine / session factory (session-scoped to avoid recreating tables)
@@ -104,6 +104,7 @@ async def db_session(test_session_factory) -> AsyncGenerator[AsyncSession, None]
         # Cleanup: delete in FK-safe order (children first)
         await session.execute(delete(ParseJob))
         await session.execute(delete(File))
+        await session.execute(delete(User))
         await session.commit()
 
 
@@ -135,6 +136,52 @@ async def client(db_session, mock_parser_client) -> AsyncGenerator[AsyncClient, 
     async with AsyncClient(
         transport=ASGITransport(app=app),
         base_url="http://test",
+    ) as ac:
+        yield ac
+
+    app.dependency_overrides.clear()
+    app.state.parser_client = None
+
+
+@pytest_asyncio.fixture
+async def test_user(db_session):
+    """Create a test user for authentication tests."""
+    from app.services.auth_service import hash_password
+    user = User(
+        user_id="testuser",
+        display_name="Test User",
+        email="test@example.com",
+        hashed_password=hash_password("password123"),
+        is_active=True,
+    )
+    db_session.add(user)
+    await db_session.commit()
+    await db_session.refresh(user)
+    return user
+
+
+@pytest_asyncio.fixture
+async def authenticated_client(db_session, mock_parser_client, test_user) -> AsyncGenerator[AsyncClient, None]:
+    """HTTP client with session cookie set for the test user."""
+    from app.database import get_db
+    from app.main import app
+    from app.services.session_service import SESSION_COOKIE_NAME
+    from itsdangerous import URLSafeTimedSerializer
+    from app.config import settings
+
+    async def override_get_db():
+        yield db_session
+
+    app.dependency_overrides[get_db] = override_get_db
+    app.state.parser_client = mock_parser_client
+
+    serializer = URLSafeTimedSerializer(settings.SECRET_KEY)
+    token = serializer.dumps({"uid": test_user.user_id, "sv": test_user.session_version})
+
+    async with AsyncClient(
+        transport=ASGITransport(app=app),
+        base_url="http://test",
+        cookies={SESSION_COOKIE_NAME: token},
     ) as ac:
         yield ac
 
