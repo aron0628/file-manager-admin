@@ -4,6 +4,7 @@ from contextlib import asynccontextmanager
 
 import httpx
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
 
 from app.api import auth, files, parse
 from app.api.pages import router as pages_router
@@ -82,6 +83,8 @@ app = FastAPI(
 async def auth_redirect_handler(request, exc):
     return exc.response
 
+
+app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
 app.include_router(auth.router)
 app.include_router(pages_router)
