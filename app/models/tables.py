@@ -42,6 +42,7 @@ class ParseJob(Base):
     status: Mapped[str] = mapped_column(String(50), nullable=False, default="pending")
     error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
     result_path: Mapped[str | None] = mapped_column(String(1000), nullable=True)
+    raptor_status: Mapped[str | None] = mapped_column(String(50), nullable=True)
     retry_failure_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()

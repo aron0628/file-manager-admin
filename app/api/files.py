@@ -129,7 +129,8 @@ async def delete_file(
     db: AsyncSession = Depends(get_db),
     user: UserModel = Depends(require_auth),
 ):
-    await file_service.delete_file(db, file_id)
+    parser_client = getattr(request.app.state, "parser_client", None)
+    await file_service.delete_file(db, file_id, parser_client=parser_client)
 
     # HTMX 요청이면 갱신된 파일 테이블 HTML partial 반환
     if request.headers.get("HX-Request"):

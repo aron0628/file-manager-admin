@@ -45,6 +45,7 @@ class ParseJobResponse(BaseModel):
     status: str
     error_message: str | None = None
     result_path: str | None = None
+    raptor_status: str | None = None
     retry_failure_count: int
     created_at: datetime
     completed_at: datetime | None = None

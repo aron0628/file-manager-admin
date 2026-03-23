@@ -108,6 +108,30 @@ async def get_parse_status(
     return job
 
 
+@router.post("/{file_id}/retry-raptor")
+async def retry_raptor(
+    file_id: uuid.UUID,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    user: UserModel = Depends(require_auth),
+):
+    """RAPTOR 재실행 요청. HTMX 요청이면 parse_status.html partial 반환."""
+    parser_client = _get_parser_client(request)
+    job = await parse_service.retry_raptor(db, file_id, parser_client)
+
+    if request.headers.get("HX-Request"):
+        return templates.TemplateResponse(
+            "partials/parse_status.html",
+            {
+                "request": request,
+                "parse_job": job,
+                "file_id": str(file_id),
+            },
+        )
+
+    return job
+
+
 @router.get("/{file_id}/parse-result")
 async def get_parse_result(
     file_id: uuid.UUID,

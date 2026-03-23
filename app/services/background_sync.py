@@ -109,6 +109,11 @@ async def _process_jobs_batch(parser_client, jobs: list[ParseJob]) -> None:
                     if parser_error:
                         db_job.error_message = parser_error
 
+                    # RAPTOR 상태 동기화
+                    raptor_status = status_data.get("raptor_status")
+                    if raptor_status is not None:
+                        db_job.raptor_status = raptor_status
+
                     if new_status in (ParseJobStatus.COMPLETED.value, ParseJobStatus.FAILED.value):
                         if db_job.completed_at is None:
                             db_job.completed_at = now

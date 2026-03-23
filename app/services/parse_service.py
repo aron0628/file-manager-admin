@@ -166,3 +166,55 @@ async def get_parse_result(
 
     logger.info(f"파싱 결과 다운로드 완료: job_id={job.id}, zip_path={zip_path}")
     return str(zip_path)
+
+
+async def retry_raptor(
+    db: AsyncSession,
+    file_id: uuid.UUID,
+    parser_client=None,
+) -> ParseJobResponse:
+    """완료된 파싱 작업에서 RAPTOR만 재실행 요청."""
+    result = await db.execute(
+        select(ParseJob)
+        .where(ParseJob.file_id == file_id)
+        .order_by(ParseJob.created_at.desc())
+        .limit(1)
+    )
+    job = result.scalar_one_or_none()
+    if job is None:
+        raise HTTPException(status_code=404, detail="No parse job found for this file")
+
+    if job.status != ParseJobStatus.COMPLETED.value:
+        raise HTTPException(
+            status_code=409,
+            detail=f"RAPTOR retry requires completed parse job. Current status: {job.status}",
+        )
+
+    if parser_client is None:
+        raise HTTPException(
+            status_code=503,
+            detail="Parser server is not connected. Cannot retry RAPTOR.",
+        )
+
+    try:
+        await parser_client.retry_raptor(job.parser_job_id)
+    except httpx.ConnectError:
+        raise HTTPException(
+            status_code=503,
+            detail="Cannot connect to parser-server. Please check the server is running.",
+        )
+    except httpx.HTTPStatusError as e:
+        raise HTTPException(
+            status_code=502,
+            detail=f"Parser server error: {e.response.status_code} {e.response.text}",
+        )
+    except Exception as e:
+        logger.exception(f"retry_raptor 호출 중 예외: {e}")
+        raise HTTPException(status_code=500, detail=f"Unexpected error calling parser: {e}")
+
+    job.raptor_status = "processing"
+    await db.commit()
+    await db.refresh(job)
+
+    logger.info(f"RAPTOR 재실행 요청: file_id={file_id}, parser_job_id={job.parser_job_id}")
+    return ParseJobResponse.model_validate(job)

@@ -1,3 +1,4 @@
+import logging
 import uuid
 from datetime import date
 from pathlib import Path
@@ -5,11 +6,14 @@ from pathlib import Path
 from fastapi import HTTPException, UploadFile
 from sqlalchemy import and_, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.config import settings
 from app.constants import Category
 from app.models.tables import File
 from app.schemas.file import FileListResponse, FileResponse, FileUpdate
+
+logger = logging.getLogger(__name__)
 
 UPLOADS_DIR = Path(settings.UPLOAD_DIR)
 
@@ -165,8 +169,19 @@ async def update_file(
     return FileResponse.model_validate(db_file)
 
 
-async def delete_file(db: AsyncSession, file_id: uuid.UUID) -> None:
+async def delete_file(db: AsyncSession, file_id: uuid.UUID, parser_client=None) -> None:
     db_file = await get_file_orm(db, file_id)
+
+    # parser-server 쪽 데이터 삭제 (document_embeddings, raptor_summaries 등)
+    if parser_client is not None:
+        stmt = select(File).options(selectinload(File.parse_jobs)).where(File.id == file_id)
+        result = await db.execute(stmt)
+        file_with_jobs = result.scalar_one()
+        for job in file_with_jobs.parse_jobs:
+            try:
+                await parser_client.delete_job(job.parser_job_id)
+            except Exception as e:
+                logger.warning("parser-server job 삭제 실패 (job_id=%s): %s", job.parser_job_id, e)
 
     # Delete physical file
     stored = Path(db_file.stored_path)
