@@ -13,6 +13,11 @@ class Category(str, Enum):
 CATEGORY_CHOICES = [c.value for c in Category]
 
 
+class UserRole(str, Enum):
+    ADMIN = "admin"
+    USER = "user"
+
+
 class ParseJobStatus(str, Enum):
     PENDING = "pending"
     PROCESSING = "processing"

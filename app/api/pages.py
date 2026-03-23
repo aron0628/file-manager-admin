@@ -10,7 +10,7 @@ from sqlalchemy.orm import selectinload
 
 from app.config import settings
 from app.database import get_db
-from app.dependencies import require_auth
+from app.dependencies import require_admin, require_auth
 from app.models.tables import File, User
 
 router = APIRouter()
@@ -171,7 +171,7 @@ async def account_page(
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=20, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_auth),
+    user: User = Depends(require_admin),
 ):
     conditions = _build_user_query(search, date_range)
 
@@ -195,6 +195,7 @@ async def account_page(
         {
             "request": request,
             "user": user,
+            "current_user": user,
             "users": users,
             "total": total,
             "page": page,
@@ -216,7 +217,7 @@ async def account_table_partial(
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=20, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_auth),
+    user: User = Depends(require_admin),
 ):
     """HTMX partial endpoint - returns only the account user table HTML."""
     conditions = _build_user_query(search, date_range)
@@ -240,6 +241,7 @@ async def account_table_partial(
         "partials/account_user_table.html",
         {
             "request": request,
+            "current_user": user,
             "users": users,
             "total": total,
             "page": page,

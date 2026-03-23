@@ -1,4 +1,4 @@
-<div id="account-user-table" class="bg-white rounded-xl shadow-[0_32px_64px_-12px_rgba(25,28,30,0.04)] overflow-hidden">
+<div id="account-user-table">
   <!-- Search Toolbar -->
   <div class="p-4 border-b border-gray-200 bg-gray-50/50 flex items-center justify-between">
     <div class="relative w-full md:w-96">
@@ -36,68 +36,46 @@
         <option value="365" {% if date_range == '365' %}selected{% endif %}>최근 1년</option>
       </select>
       <span id="account-table-loading" class="htmx-indicator text-indigo-600">
-      <svg class="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
-        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
-      </svg>
+        <svg class="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+        </svg>
       </span>
     </div>
   </div>
 
   <!-- Table -->
-  <div class="overflow-x-auto">
-    <table class="w-full text-left border-collapse">
-      <thead>
-        <tr class="text-[0.7rem] uppercase tracking-widest text-[#464554] border-b border-[#eceef0]">
-          <th class="px-8 py-4 font-semibold">사용자 ID</th>
-          <th class="px-8 py-4 font-semibold">이름</th>
-          <th class="px-8 py-4 font-semibold">이메일</th>
-          <th class="px-8 py-4 font-semibold">상태</th>
-          <th class="px-8 py-4 font-semibold">생성일</th>
-        </tr>
-      </thead>
-      <tbody class="text-sm">
-        {% for u in users %}
-        <tr class="group hover:bg-[#f2f4f6]/50 transition-colors border-b border-[#eceef0] last:border-b-0">
-          <td class="px-8 py-4">
-            <div class="flex items-center gap-3">
-              <div class="w-8 h-8 rounded-full bg-[#e1e0ff] flex items-center justify-center text-[#07006c] font-bold text-xs">
-                {{ u.display_name[:2] }}
-              </div>
-              <span class="font-medium text-[#191c1e]">{{ u.user_id }}</span>
-            </div>
-          </td>
-          <td class="px-8 py-4 text-[#464554]">{{ u.display_name }}</td>
-          <td class="px-8 py-4 text-[#464554]">{{ u.email }}</td>
-          <td class="px-8 py-4">
-            {% if u.is_active %}
-            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-green-50 text-green-700">
-              <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span>
-              활성
-            </span>
-            {% else %}
-            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-500">
-              <span class="w-1.5 h-1.5 rounded-full bg-gray-400"></span>
-              비활성
-            </span>
-            {% endif %}
-          </td>
-          <td class="px-8 py-4 text-[#464554]">{{ u.created_at.strftime('%Y년 %m월 %d일') }}</td>
-        </tr>
-        {% else %}
-        <tr>
-          <td colspan="5" class="px-8 py-12 text-center text-[#767586]">
-            <span class="material-symbols-outlined text-4xl mb-2 block">group_off</span>
-            {% if search %}
-            <p class="text-sm">"{{ search }}" 검색 결과가 없습니다</p>
-            {% else %}
-            <p class="text-sm">등록된 계정이 없습니다</p>
-            {% endif %}
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+  <div id="account-table-body">
+    {% if users %}
+    <div class="overflow-x-auto">
+      <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
+          <tr>
+            <th class="px-3 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider" scope="col">사용자 ID</th>
+            <th class="px-3 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider" scope="col">이름</th>
+            <th class="px-3 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider" scope="col">이메일</th>
+            <th class="px-3 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider" scope="col">상태</th>
+            <th class="px-3 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider" scope="col">역할</th>
+            <th class="px-3 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider" scope="col">생성일</th>
+          </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-200">
+          {% for u in users %}
+            {% include "partials/account_user_row.html" %}
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="px-8 py-16 text-center text-gray-500">
+      <span class="material-symbols-outlined text-4xl mb-2 block">group_off</span>
+      {% if search %}
+      <p class="text-sm">"{{ search }}" 검색 결과가 없습니다</p>
+      {% else %}
+      <p class="text-sm">등록된 계정이 없습니다</p>
+      {% endif %}
+    </div>
+    {% endif %}
   </div>
 
   <!-- Pagination -->

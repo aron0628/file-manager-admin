@@ -58,6 +58,17 @@ async def require_auth(
     return user
 
 
+async def require_admin(
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+) -> User:
+    user = await require_auth(request, db)
+    if user.role != "admin":
+        from fastapi import HTTPException
+        raise HTTPException(status_code=403, detail="관리자 권한이 필요합니다.")
+    return user
+
+
 class _AuthRedirectException(Exception):
     def __init__(self, response: Response):
         self.response = response

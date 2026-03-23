@@ -1,0 +1,58 @@
+<tr id="account-row-{{ u.user_id }}" class="hover:bg-gray-50 transition-colors">
+  <!-- User ID + Avatar -->
+  <td class="px-3 py-4">
+    <div class="flex items-center min-w-0">
+      <div class="flex-shrink-0 h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-xs">
+        {{ u.display_name[:2] }}
+      </div>
+      <div class="ml-4 min-w-0">
+        <button
+          type="button"
+          class="text-sm font-medium text-gray-900 hover:text-indigo-600 transition-colors cursor-pointer truncate max-w-[200px] block text-left"
+          title="클릭하여 수정"
+          onclick="openAccountEditModal('{{ u.user_id }}', '{{ u.display_name }}', '{{ u.email }}', '{{ u.role }}', {{ 'true' if u.is_active else 'false' }})"
+        >{{ u.user_id }}</button>
+        <div class="text-xs text-gray-500">{{ u.display_name }}</div>
+      </div>
+    </div>
+  </td>
+
+  <!-- Display Name -->
+  <td class="px-3 py-4 whitespace-nowrap text-center text-sm text-gray-700">
+    {{ u.display_name }}
+  </td>
+
+  <!-- Email -->
+  <td class="px-3 py-4 whitespace-nowrap text-center text-sm text-gray-500">
+    {{ u.email }}
+  </td>
+
+  <!-- Status -->
+  <td class="px-3 py-4 whitespace-nowrap text-center">
+    {% if u.is_active %}
+    <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+      <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span>
+      활성
+    </span>
+    {% else %}
+    <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
+      <span class="w-1.5 h-1.5 rounded-full bg-gray-400"></span>
+      비활성
+    </span>
+    {% endif %}
+  </td>
+
+  <!-- Role -->
+  <td class="px-3 py-4 whitespace-nowrap text-center">
+    {% if u.role == 'admin' %}
+    <span class="px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">관리자</span>
+    {% else %}
+    <span class="px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">일반 사용자</span>
+    {% endif %}
+  </td>
+
+  <!-- Created At -->
+  <td class="px-3 py-4 whitespace-nowrap text-center text-sm text-gray-500">
+    {{ u.created_at.strftime('%Y년 %m월 %d일') }}
+  </td>
+</tr>

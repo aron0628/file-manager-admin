@@ -14,7 +14,7 @@ def verify_password(plain: str, hashed: str) -> bool:
 
 
 async def create_user(
-    db: AsyncSession, user_id: str, email: str, display_name: str, password: str
+    db: AsyncSession, user_id: str, email: str, display_name: str, password: str, role: str = "user"
 ) -> User:
     if len(password) < 8:
         raise ValueError("비밀번호는 최소 8자 이상이어야 합니다.")
@@ -32,6 +32,7 @@ async def create_user(
         email=email,
         display_name=display_name,
         hashed_password=hash_password(password),
+        role=role,
     )
     db.add(user)
     await db.commit()
