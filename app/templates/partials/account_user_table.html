@@ -1,4 +1,50 @@
 <div id="account-user-table" class="bg-white rounded-xl shadow-[0_32px_64px_-12px_rgba(25,28,30,0.04)] overflow-hidden">
+  <!-- Search Toolbar -->
+  <div class="p-4 border-b border-gray-200 bg-gray-50/50 flex items-center justify-between">
+    <div class="relative w-full md:w-96">
+      <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+        <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+        </svg>
+      </span>
+      <input
+        type="text"
+        name="search"
+        value="{{ search }}"
+        placeholder="이름, ID, 이메일로 검색..."
+        class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+        hx-get="/api/partials/account-table"
+        hx-trigger="keyup changed delay:300ms"
+        hx-target="#account-table-container"
+        hx-include="[name='date_range']"
+        hx-indicator="#account-table-loading"
+      />
+    </div>
+    <div class="flex items-center gap-3">
+      <select
+        name="date_range"
+        class="block w-full md:w-40 pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+        hx-get="/api/partials/account-table"
+        hx-trigger="change"
+        hx-target="#account-table-container"
+        hx-include="[name='search']"
+        hx-indicator="#account-table-loading"
+      >
+        <option value="" {% if not date_range %}selected{% endif %}>전체 기간</option>
+        <option value="30" {% if date_range == '30' %}selected{% endif %}>최근 30일</option>
+        <option value="180" {% if date_range == '180' %}selected{% endif %}>최근 6개월</option>
+        <option value="365" {% if date_range == '365' %}selected{% endif %}>최근 1년</option>
+      </select>
+      <span id="account-table-loading" class="htmx-indicator text-indigo-600">
+      <svg class="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+      </svg>
+      </span>
+    </div>
+  </div>
+
+  <!-- Table -->
   <div class="overflow-x-auto">
     <table class="w-full text-left border-collapse">
       <thead>
@@ -42,11 +88,142 @@
         <tr>
           <td colspan="5" class="px-8 py-12 text-center text-[#767586]">
             <span class="material-symbols-outlined text-4xl mb-2 block">group_off</span>
+            {% if search %}
+            <p class="text-sm">"{{ search }}" 검색 결과가 없습니다</p>
+            {% else %}
             <p class="text-sm">등록된 계정이 없습니다</p>
+            {% endif %}
           </td>
         </tr>
         {% endfor %}
       </tbody>
     </table>
   </div>
+
+  <!-- Pagination -->
+  {% if total_pages is defined and total_pages > 0 %}
+  <footer class="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
+    <div class="flex-1 flex justify-between sm:hidden">
+      {% if page > 1 %}
+      <button
+        class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+        hx-get="/api/partials/account-table?date_range={{ date_range }}&page={{ page - 1 }}&search={{ search }}"
+        hx-target="#account-table-container"
+      >이전</button>
+      {% else %}
+      <span class="relative inline-flex items-center px-4 py-2 border border-gray-200 text-sm font-medium rounded-md text-gray-400 bg-gray-50 cursor-not-allowed">이전</span>
+      {% endif %}
+      {% if page < total_pages %}
+      <button
+        class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+        hx-get="/api/partials/account-table?date_range={{ date_range }}&page={{ page + 1 }}&search={{ search }}"
+        hx-target="#account-table-container"
+      >다음</button>
+      {% else %}
+      <span class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-200 text-sm font-medium rounded-md text-gray-400 bg-gray-50 cursor-not-allowed">다음</span>
+      {% endif %}
+    </div>
+
+    <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+      <div>
+        <p class="text-sm text-gray-700">
+          전체
+          <span class="font-medium">{{ total }}</span>
+          건 중
+          <span class="font-medium">{{ offset + 1 if total > 0 else 0 }}</span>
+          -
+          <span class="font-medium">{{ [offset + page_size, total] | min }}</span>
+        </p>
+      </div>
+      <div>
+        <nav aria-label="Pagination" class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
+          {% if page > 1 %}
+          <button
+            class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
+            hx-get="/api/partials/account-table?date_range={{ date_range }}&page={{ page - 1 }}&search={{ search }}"
+            hx-target="#account-table-container"
+          >
+            <span class="sr-only">이전</span>
+            <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+              <path clip-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" fill-rule="evenodd"></path>
+            </svg>
+          </button>
+          {% else %}
+          <span class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-200 bg-gray-50 text-sm font-medium text-gray-400">
+            <span class="sr-only">이전</span>
+            <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+              <path clip-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" fill-rule="evenodd"></path>
+            </svg>
+          </span>
+          {% endif %}
+
+          {% set start_page = [1, page - 2] | max %}
+          {% set end_page = [total_pages, page + 2] | min %}
+
+          {% if start_page > 1 %}
+          <button
+            class="bg-white border-gray-300 text-gray-500 hover:bg-gray-50 relative inline-flex items-center px-4 py-2 border text-sm font-medium"
+            hx-get="/api/partials/account-table?date_range={{ date_range }}&page=1&search={{ search }}"
+            hx-target="#account-table-container"
+          >1</button>
+          {% if start_page > 2 %}
+          <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">...</span>
+          {% endif %}
+          {% endif %}
+
+          {% for p in range(start_page, end_page + 1) %}
+          {% if p == page %}
+          <span aria-current="page" class="z-10 bg-indigo-50 border-indigo-500 text-indigo-600 relative inline-flex items-center px-4 py-2 border text-sm font-medium">{{ p }}</span>
+          {% else %}
+          <button
+            class="bg-white border-gray-300 text-gray-500 hover:bg-gray-50 relative inline-flex items-center px-4 py-2 border text-sm font-medium"
+            hx-get="/api/partials/account-table?date_range={{ date_range }}&page={{ p }}&search={{ search }}"
+            hx-target="#account-table-container"
+          >{{ p }}</button>
+          {% endif %}
+          {% endfor %}
+
+          {% if end_page < total_pages %}
+          {% if end_page < total_pages - 1 %}
+          <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">...</span>
+          {% endif %}
+          <button
+            class="bg-white border-gray-300 text-gray-500 hover:bg-gray-50 relative inline-flex items-center px-4 py-2 border text-sm font-medium"
+            hx-get="/api/partials/account-table?date_range={{ date_range }}&page={{ total_pages }}&search={{ search }}"
+            hx-target="#account-table-container"
+          >{{ total_pages }}</button>
+          {% endif %}
+
+          {% if page < total_pages %}
+          <button
+            class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
+            hx-get="/api/partials/account-table?date_range={{ date_range }}&page={{ page + 1 }}&search={{ search }}"
+            hx-target="#account-table-container"
+          >
+            <span class="sr-only">다음</span>
+            <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+              <path clip-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" fill-rule="evenodd"></path>
+            </svg>
+          </button>
+          {% else %}
+          <span class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-200 bg-gray-50 text-sm font-medium text-gray-400">
+            <span class="sr-only">다음</span>
+            <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+              <path clip-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" fill-rule="evenodd"></path>
+            </svg>
+          </span>
+          {% endif %}
+        </nav>
+      </div>
+    </div>
+  </footer>
+  {% elif total_pages is defined %}
+  <footer class="px-6 py-4 border-t border-gray-200 flex items-center justify-between opacity-50">
+    <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+      <div>
+        <p class="text-sm text-gray-500">전체 <span class="font-medium">0</span> 건</p>
+      </div>
+    </div>
+  </footer>
+  {% endif %}
 </div>

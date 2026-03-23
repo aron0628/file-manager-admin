@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
@@ -100,12 +100,27 @@ async def create_account(
             status_code=400,
         )
 
-    # Success: return updated user table to replace the list
-    result = await db.execute(select(User).order_by(User.created_at.desc()))
+    # Success: return updated user table with pagination context
+    page_size = 20
+    total_result = await db.execute(select(func.count()).select_from(User))
+    total = total_result.scalar_one()
+    total_pages = (total + page_size - 1) // page_size if total > 0 else 0
+
+    result = await db.execute(select(User).order_by(User.created_at.desc()).offset(0).limit(page_size))
     users = result.scalars().all()
     response = templates.TemplateResponse(
         "partials/account_user_table.html",
-        {"request": request, "users": users},
+        {
+            "request": request,
+            "users": users,
+            "total": total,
+            "page": 1,
+            "page_size": page_size,
+            "total_pages": total_pages,
+            "offset": 0,
+            "search": "",
+            "date_range": "",
+        },
     )
     response.headers["HX-Trigger"] = "closeAccountModal"
     response.headers["HX-Retarget"] = "#account-user-table"

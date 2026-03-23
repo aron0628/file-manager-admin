@@ -22,7 +22,9 @@
 </header>
 
 <!-- User List Table -->
-{% include "partials/account_user_table.html" %}
+<div id="account-table-container">
+  {% include "partials/account_user_table.html" %}
+</div>
 {% endblock %}
 
 {% block scripts %}
