@@ -1,0 +1,50 @@
+<!-- Account Creation Modal -->
+<div id="account-modal" class="hidden fixed inset-0 z-50 overflow-y-auto" aria-labelledby="account-modal-title" role="dialog" aria-modal="true">
+  <!-- Backdrop -->
+  <div class="flex min-h-screen items-center justify-center p-4">
+    <div
+      class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
+      onclick="closeAccountModal()"
+    ></div>
+
+    <!-- Modal panel -->
+    <div class="relative bg-white rounded-xl shadow-xl w-full max-w-md z-10">
+      <!-- Header -->
+      <div class="flex items-center justify-between px-8 py-5">
+        <h2 id="account-modal-title" class="text-lg font-bold text-[#191c1e]">새 계정 생성</h2>
+        <button
+          type="button"
+          onclick="closeAccountModal()"
+          class="text-[#767586] hover:text-[#191c1e] transition-colors"
+        >
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+
+      <!-- Form -->
+      <div id="account-form-container" class="px-8 pb-8">
+        {% include "partials/account_create_form.html" %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  function openAccountModal() {
+    document.getElementById('account-modal').classList.remove('hidden');
+  }
+  function closeAccountModal() {
+    document.getElementById('account-modal').classList.add('hidden');
+    // Reset form
+    var form = document.querySelector('#account-form-container form');
+    if (form) form.reset();
+    // Remove success/error messages by re-rendering clean form
+    var container = document.getElementById('account-form-container');
+    var alerts = container.querySelectorAll('.mb-6');
+    alerts.forEach(function(el) { el.remove(); });
+  }
+  // Listen for HX-Trigger closeAccountModal event
+  document.body.addEventListener('closeAccountModal', function() {
+    closeAccountModal();
+  });
+</script>

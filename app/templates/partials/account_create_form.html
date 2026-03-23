@@ -1,0 +1,63 @@
+{% if success is defined and success %}
+<div class="mb-6 p-4 rounded-xl bg-green-50">
+  <div class="flex items-center gap-2">
+    <svg class="w-5 h-5 text-green-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+      <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+    </svg>
+    <span class="text-sm font-medium text-green-800">계정이 성공적으로 생성되었습니다.</span>
+  </div>
+</div>
+{% endif %}
+
+{% if error is defined and error %}
+<div class="mb-6 p-4 rounded-xl bg-red-50">
+  <div class="flex items-center gap-2">
+    <svg class="w-5 h-5 text-red-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+      <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+    </svg>
+    <span class="text-sm font-medium text-red-800">{{ error }}</span>
+  </div>
+</div>
+{% endif %}
+
+<form hx-post="/api/accounts" hx-target="#account-form-container" hx-swap="innerHTML" class="space-y-6">
+  <!-- User ID -->
+  <div class="space-y-2">
+    <label class="block text-[0.7rem] font-bold uppercase tracking-widest text-[#464554] px-1" for="user_id">사용자 ID</label>
+    <input class="w-full bg-[#f2f4f6] border-none rounded-xl px-4 py-3.5 text-[#191c1e] placeholder:text-[#767586]/50 focus:ring-2 focus:ring-[#4648d4]/40 transition-all duration-200 outline-none text-sm"
+           id="user_id" name="user_id" placeholder="user123" type="text" required
+           value="{{ form_data.user_id if form_data is defined and form_data.user_id else '' }}"/>
+  </div>
+
+  <!-- Display Name -->
+  <div class="space-y-2">
+    <label class="block text-[0.7rem] font-bold uppercase tracking-widest text-[#464554] px-1" for="display_name">이름</label>
+    <input class="w-full bg-[#f2f4f6] border-none rounded-xl px-4 py-3.5 text-[#191c1e] placeholder:text-[#767586]/50 focus:ring-2 focus:ring-[#4648d4]/40 transition-all duration-200 outline-none text-sm"
+           id="display_name" name="display_name" placeholder="홍길동" type="text" required
+           value="{{ form_data.display_name if form_data is defined and form_data.display_name else '' }}"/>
+  </div>
+
+  <!-- Email -->
+  <div class="space-y-2">
+    <label class="block text-[0.7rem] font-bold uppercase tracking-widest text-[#464554] px-1" for="email">이메일</label>
+    <input class="w-full bg-[#f2f4f6] border-none rounded-xl px-4 py-3.5 text-[#191c1e] placeholder:text-[#767586]/50 focus:ring-2 focus:ring-[#4648d4]/40 transition-all duration-200 outline-none text-sm"
+           id="email" name="email" placeholder="name@company.com" type="email" required
+           value="{{ form_data.email if form_data is defined and form_data.email else '' }}"/>
+  </div>
+
+  <!-- Password -->
+  <div class="space-y-2">
+    <label class="block text-[0.7rem] font-bold uppercase tracking-widest text-[#464554] px-1" for="password">비밀번호</label>
+    <input class="w-full bg-[#f2f4f6] border-none rounded-xl px-4 py-3.5 text-[#191c1e] placeholder:text-[#767586]/50 focus:ring-2 focus:ring-[#4648d4]/40 transition-all duration-200 outline-none text-sm"
+           id="password" name="password" placeholder="••••••••" type="password" required/>
+    <p class="text-[11px] text-[#767586] px-1">비밀번호는 최소 8자 이상이어야 합니다.</p>
+  </div>
+
+  <!-- Submit -->
+  <div class="pt-4">
+    <button type="submit"
+            class="w-full bg-gradient-to-br from-[#4648d4] to-[#6063ee] text-white font-semibold py-3.5 rounded-lg shadow-lg shadow-[#4648d4]/20 hover:opacity-90 active:scale-[0.98] transition-all duration-200 text-sm">
+      계정 생성
+    </button>
+  </div>
+</form>

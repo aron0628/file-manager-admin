@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block title %}계정 관리 | 모바일팩토리{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<header class="mb-12 flex flex-col md:flex-row md:items-end md:justify-between gap-4">
+  <div>
+    <h1 class="text-4xl font-extrabold tracking-tight text-[#191c1e] mb-2 font-headline">계정 관리</h1>
+    <p class="text-[#464554]">사용자 계정을 관리하고 새 계정을 생성합니다</p>
+  </div>
+  <div>
+    <button
+      type="button"
+      onclick="openAccountModal()"
+      class="inline-flex items-center px-6 py-3 bg-gradient-to-br from-[#4648d4] to-[#6063ee] text-white text-sm font-semibold rounded-lg shadow-lg shadow-[#4648d4]/20 hover:scale-[1.02] active:scale-95 transition-transform"
+    >
+      <span class="material-symbols-outlined text-[18px] mr-2">person_add</span>
+      새 계정 추가
+    </button>
+  </div>
+</header>
+
+<!-- User List Table -->
+{% include "partials/account_user_table.html" %}
+{% endblock %}
+
+{% block scripts %}
+{% include "partials/account_modal.html" %}
+{% endblock %}

@@ -88,6 +88,7 @@ async def index(
             "file_type": file_type or "",
             "date_range": date_range or "",
             "max_upload_size_mb": settings.MAX_UPLOAD_SIZE_MB,
+            "active_nav": "files",
         },
     )
 
@@ -137,5 +138,24 @@ async def file_table_partial(
             "search": search or "",
             "file_type": file_type or "",
             "date_range": date_range or "",
+        },
+    )
+
+
+@router.get("/account", response_class=HTMLResponse)
+async def account_page(
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(require_auth),
+):
+    result = await db.execute(select(User).order_by(User.created_at.desc()))
+    users = result.scalars().all()
+    return templates.TemplateResponse(
+        "account.html",
+        {
+            "request": request,
+            "user": user,
+            "users": users,
+            "active_nav": "account",
         },
     )

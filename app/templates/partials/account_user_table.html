@@ -1,0 +1,52 @@
+<div id="account-user-table" class="bg-white rounded-xl shadow-[0_32px_64px_-12px_rgba(25,28,30,0.04)] overflow-hidden">
+  <div class="overflow-x-auto">
+    <table class="w-full text-left border-collapse">
+      <thead>
+        <tr class="text-[0.7rem] uppercase tracking-widest text-[#464554] border-b border-[#eceef0]">
+          <th class="px-8 py-4 font-semibold">사용자 ID</th>
+          <th class="px-8 py-4 font-semibold">이름</th>
+          <th class="px-8 py-4 font-semibold">이메일</th>
+          <th class="px-8 py-4 font-semibold">상태</th>
+          <th class="px-8 py-4 font-semibold">생성일</th>
+        </tr>
+      </thead>
+      <tbody class="text-sm">
+        {% for u in users %}
+        <tr class="group hover:bg-[#f2f4f6]/50 transition-colors border-b border-[#eceef0] last:border-b-0">
+          <td class="px-8 py-4">
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 rounded-full bg-[#e1e0ff] flex items-center justify-center text-[#07006c] font-bold text-xs">
+                {{ u.display_name[:2] }}
+              </div>
+              <span class="font-medium text-[#191c1e]">{{ u.user_id }}</span>
+            </div>
+          </td>
+          <td class="px-8 py-4 text-[#464554]">{{ u.display_name }}</td>
+          <td class="px-8 py-4 text-[#464554]">{{ u.email }}</td>
+          <td class="px-8 py-4">
+            {% if u.is_active %}
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-green-50 text-green-700">
+              <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span>
+              활성
+            </span>
+            {% else %}
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-500">
+              <span class="w-1.5 h-1.5 rounded-full bg-gray-400"></span>
+              비활성
+            </span>
+            {% endif %}
+          </td>
+          <td class="px-8 py-4 text-[#464554]">{{ u.created_at.strftime('%Y년 %m월 %d일') }}</td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="5" class="px-8 py-12 text-center text-[#767586]">
+            <span class="material-symbols-outlined text-4xl mb-2 block">group_off</span>
+            <p class="text-sm">등록된 계정이 없습니다</p>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>

@@ -1,0 +1,47 @@
+<!-- Sidebar Navigation -->
+<aside class="h-screen w-64 fixed left-0 top-0 bg-slate-50 flex flex-col p-6 space-y-2 z-40">
+  <!-- Brand -->
+  <div class="flex items-center mb-8">
+    <img src="/static/logo-c.svg" alt="모바일팩토리" width="28" height="25"/>
+    <span class="ml-2 text-xl font-bold text-[#006a6f] tracking-wider font-headline">모바일팩토리</span>
+  </div>
+
+  <!-- Navigation -->
+  <nav class="space-y-2 flex-grow">
+    <!-- 파일 관리 -->
+    <a href="/"
+       class="flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 active:scale-95 text-sm tracking-tight
+              {% if active_nav == 'files' %}bg-white text-indigo-700 shadow-sm font-semibold{% else %}text-slate-500 hover:text-indigo-600 hover:bg-slate-200/50 font-medium{% endif %}">
+      <span class="material-symbols-outlined">folder_open</span>
+      파일 관리
+    </a>
+
+    <!-- 계정 관리 -->
+    <a href="/account"
+       class="flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 active:scale-95 text-sm tracking-tight
+              {% if active_nav == 'account' %}bg-white text-indigo-700 shadow-sm font-semibold{% else %}text-slate-500 hover:text-indigo-600 hover:bg-slate-200/50 font-medium{% endif %}">
+      <span class="material-symbols-outlined">manage_accounts</span>
+      계정 관리
+    </a>
+  </nav>
+
+  <!-- User Profile + Logout -->
+  <div class="mt-auto pt-6 border-t border-[#c7c4d7]/10">
+    <div class="flex items-center gap-3 px-2 mb-4">
+      <div class="w-10 h-10 rounded-full bg-[#e1e0ff] flex items-center justify-center text-[#07006c] font-bold text-sm">
+        {{ request.state.user.display_name[:2] }}
+      </div>
+      <div>
+        <p class="text-sm font-bold text-[#191c1e]">{{ request.state.user.display_name }}</p>
+        <p class="text-xs text-[#464554]">{{ request.state.user.user_id }}</p>
+      </div>
+    </div>
+    <form action="/auth/logout" method="post">
+      <button type="submit"
+              class="flex items-center gap-2 px-4 py-2 w-full text-sm text-slate-500 hover:text-red-600 hover:bg-red-50/50 rounded-lg transition-all duration-200">
+        <span class="material-symbols-outlined text-[18px]">logout</span>
+        로그아웃
+      </button>
+    </form>
+  </div>
+</aside>
