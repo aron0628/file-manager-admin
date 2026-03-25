@@ -8,6 +8,7 @@ from fastapi.staticfiles import StaticFiles
 
 from app.api import auth, files, parse
 from app.api.pages import router as pages_router
+from app.api.settings import router as settings_router
 from app.config import settings
 from app.dependencies import _AuthRedirectException
 from app.schemas.file import HealthResponse
@@ -90,6 +91,7 @@ app.include_router(auth.router)
 app.include_router(pages_router)
 app.include_router(files.router)
 app.include_router(parse.router)
+app.include_router(settings_router)
 
 
 @app.get("/health", response_model=HealthResponse)

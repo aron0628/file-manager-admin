@@ -1,0 +1,88 @@
+{% set groups = {} %}
+{% for key, s in settings.items() %}
+  {% if s.group not in groups %}
+    {% set _ = groups.update({s.group: []}) %}
+  {% endif %}
+  {% set _ = groups[s.group].append(s) %}
+{% endfor %}
+
+{% for group_name, group_settings in groups.items() %}
+<section class="bg-white rounded-2xl shadow-sm border border-slate-100 mb-6 overflow-hidden">
+  <div class="px-6 py-4 border-b border-slate-100 bg-slate-50/60">
+    <h2 class="text-base font-semibold text-[#191c1e] tracking-tight">{{ group_name }}</h2>
+  </div>
+  <div class="divide-y divide-slate-100">
+    {% for s in group_settings %}
+    <div class="px-6 py-5 flex flex-col sm:flex-row sm:items-center gap-3">
+      <!-- Label + description -->
+      <div class="sm:w-72 flex-shrink-0">
+        <p class="text-sm font-semibold text-[#191c1e]">{{ s.key }}</p>
+        <p class="text-xs text-[#6b7280] mt-0.5">{{ s.description }}</p>
+      </div>
+
+      <!-- Input + feedback -->
+      <div class="flex-1 flex items-center gap-3">
+        {% if s.setting_type == "model_select" %}
+        <select
+          name="value"
+          hx-put="/api/settings/{{ s.key }}"
+          hx-encoding="application/x-www-form-urlencoded"
+          hx-target="#feedback-{{ s.key }}"
+          hx-swap="innerHTML"
+          hx-trigger="change"
+          hx-include="[name='value']"
+          class="flex-1 text-sm border border-slate-200 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition"
+        >
+          {% for provider, models in available_models.items() %}
+          <optgroup label="{{ provider }}">
+            {% for val, label in models %}
+            <option value="{{ val }}" {% if s.value == val %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </optgroup>
+          {% endfor %}
+        </select>
+
+        {% elif s.setting_type == "boolean" %}
+        <label class="relative inline-flex items-center cursor-pointer">
+          <input
+            type="checkbox"
+            name="value"
+            value="true"
+            {% if s.value == "true" %}checked{% endif %}
+            hx-put="/api/settings/{{ s.key }}"
+            hx-encoding="application/x-www-form-urlencoded"
+            hx-target="#feedback-{{ s.key }}"
+            hx-swap="innerHTML"
+            hx-trigger="change"
+            hx-vals='js:{"value": document.getElementById("toggle-{{ s.key }}").checked ? "true" : "false"}'
+            id="toggle-{{ s.key }}"
+            class="sr-only peer"
+          />
+          <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-indigo-400 rounded-full peer peer-checked:bg-indigo-600 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full"></div>
+        </label>
+        <span class="text-sm text-slate-500" id="toggle-label-{{ s.key }}">
+          {% if s.value == "true" %}활성화{% else %}비활성화{% endif %}
+        </span>
+
+        {% else %}
+        <input
+          type="text"
+          name="value"
+          value="{{ s.value }}"
+          hx-put="/api/settings/{{ s.key }}"
+          hx-encoding="application/x-www-form-urlencoded"
+          hx-target="#feedback-{{ s.key }}"
+          hx-swap="innerHTML"
+          hx-trigger="blur"
+          class="flex-1 text-sm border border-slate-200 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition"
+        />
+        {% endif %}
+
+        <!-- Feedback slot -->
+        <span id="feedback-{{ s.key }}" class="text-xs w-20 flex-shrink-0"></span>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+{% endfor %}

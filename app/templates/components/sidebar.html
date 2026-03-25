@@ -25,6 +25,16 @@
       계정 관리
     </a>
     {% endif %}
+
+    <!-- 시스템 설정 (admin only) -->
+    {% if request.state.user.role == 'admin' %}
+    <a href="/settings"
+       class="flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 active:scale-95 text-sm tracking-tight
+              {% if active_nav == 'settings' %}bg-white text-indigo-700 shadow-sm font-semibold{% else %}text-slate-500 hover:text-indigo-600 hover:bg-slate-200/50 font-medium{% endif %}">
+      <span class="material-symbols-outlined">settings</span>
+      시스템 설정
+    </a>
+    {% endif %}
   </nav>
 
   <!-- User Profile + Logout -->
