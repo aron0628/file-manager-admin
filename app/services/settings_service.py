@@ -79,6 +79,19 @@ TAB_GROUPS: list[tuple[str, str, list[str]]] = [
     ("system", "시스템", ["업로드 설정", "보안 설정"]),
 ]
 
+AVAILABLE_MIME_TYPES: list[tuple[str, str]] = [
+    ("application/pdf", "PDF"),
+    ("image/png", "PNG"),
+    ("image/jpeg", "JPEG"),
+    ("image/gif", "GIF"),
+    ("image/webp", "WebP"),
+    ("application/vnd.openxmlformats-officedocument.wordprocessingml.document", "DOCX"),
+    ("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "XLSX"),
+    ("application/vnd.openxmlformats-officedocument.presentationml.presentation", "PPTX"),
+    ("text/plain", "TXT"),
+    ("text/csv", "CSV"),
+]
+
 MODEL_SELECTOR_KEYS = {"model", "summarization_model", "rag_grading_model"}
 BOOLEAN_KEYS = {"enable_raptor", "enable_hybrid_search"}
 
@@ -169,9 +182,9 @@ SETTING_DEFINITIONS: dict[str, SettingDefinition] = {
     "allowed_mime_types": SettingDefinition(
         key="allowed_mime_types",
         default="application/pdf",
-        description="허용 MIME 타입 (쉼표로 구분, 예: application/pdf,image/png)",
+        description="업로드를 허용할 파일 형식을 선택하세요",
         group="업로드 설정",
-        setting_type="text",
+        setting_type="mime_select",
     ),
     # -- 파싱 설정 --
     "parse_poll_interval_seconds": SettingDefinition(

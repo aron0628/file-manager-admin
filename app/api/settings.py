@@ -7,6 +7,7 @@ from app.database import get_db
 from app.dependencies import require_admin
 from app.models.tables import User
 from app.services.settings_service import (
+    AVAILABLE_MIME_TYPES,
     AVAILABLE_MODELS,
     BOOLEAN_KEYS,
     SETTING_DEFINITIONS,
@@ -37,6 +38,7 @@ async def settings_page(
             "user": user,
             "settings": all_settings,
             "available_models": AVAILABLE_MODELS,
+            "available_mime_types": AVAILABLE_MIME_TYPES,
             "tab_groups": TAB_GROUPS,
             "active_nav": "settings",
         },
@@ -57,6 +59,7 @@ async def settings_form_partial(
             "request": request,
             "settings": all_settings,
             "available_models": AVAILABLE_MODELS,
+            "available_mime_types": AVAILABLE_MIME_TYPES,
             "tab_groups": TAB_GROUPS,
         },
     )
@@ -120,6 +123,7 @@ async def batch_update_settings(
             "request": request,
             "settings": all_settings,
             "available_models": AVAILABLE_MODELS,
+            "available_mime_types": AVAILABLE_MIME_TYPES,
             "tab_groups": TAB_GROUPS,
             "save_success": True,
             "session_warning": session_warning,
@@ -152,6 +156,7 @@ async def preview_defaults(
             "request": request,
             "settings": default_settings,
             "available_models": AVAILABLE_MODELS,
+            "available_mime_types": AVAILABLE_MIME_TYPES,
             "tab_groups": TAB_GROUPS,
         },
     )

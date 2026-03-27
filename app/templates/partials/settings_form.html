@@ -8,6 +8,66 @@
 
 {% set current_tab = active_tab if active_tab is defined else "agent" %}
 
+<!-- MIME multi-select JS (must be before form so inline scripts can call renderMimeBadges) -->
+<script>
+var MIME_LABELS = {
+  {% for mv, ml in available_mime_types %}'{{ mv }}': '{{ ml }}'{% if not loop.last %}, {% endif %}{% endfor %}
+};
+
+function toggleMimeDropdown(key) {
+  var dd = document.querySelector('[data-mime-dropdown="' + key + '"]');
+  dd.classList.toggle('hidden');
+}
+
+document.addEventListener('click', function(e) {
+  document.querySelectorAll('[data-mime-select]').forEach(function(container) {
+    if (!container.contains(e.target)) {
+      var key = container.dataset.mimeSelect;
+      var dd = document.querySelector('[data-mime-dropdown="' + key + '"]');
+      if (dd) dd.classList.add('hidden');
+    }
+  });
+});
+
+function updateMimeSelection(key) {
+  var checkboxes = document.querySelectorAll('[data-mime-dropdown="' + key + '"] input[type="checkbox"]');
+  var selected = [];
+  checkboxes.forEach(function(cb) { if (cb.checked) selected.push(cb.value); });
+  document.querySelector('[data-mime-hidden="' + key + '"]').value = selected.join(',');
+  renderMimeBadges(key, selected);
+}
+
+function removeMime(key, mimeVal) {
+  var checkboxes = document.querySelectorAll('[data-mime-dropdown="' + key + '"] input[type="checkbox"]');
+  checkboxes.forEach(function(cb) { if (cb.value === mimeVal) cb.checked = false; });
+  updateMimeSelection(key);
+}
+
+function getMimeBadgeColors(mime) {
+  if (mime === 'application/pdf') return 'bg-rose-50 text-rose-700 border-rose-200 hover:text-rose-900';
+  if (mime.startsWith('image/')) return 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:text-emerald-900';
+  if (mime.startsWith('application/vnd.openxmlformats')) return 'bg-blue-50 text-blue-700 border-blue-200 hover:text-blue-900';
+  if (mime.startsWith('text/')) return 'bg-slate-100 text-slate-700 border-slate-300 hover:text-slate-900';
+  return 'bg-indigo-50 text-indigo-700 border-indigo-200 hover:text-indigo-900';
+}
+
+function renderMimeBadges(key, selected) {
+  var container = document.querySelector('[data-mime-badges="' + key + '"]');
+  if (!container) return;
+  container.innerHTML = '';
+  selected.forEach(function(mime) {
+    var label = MIME_LABELS[mime] || mime;
+    var colors = getMimeBadgeColors(mime);
+    var span = document.createElement('span');
+    span.className = 'inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-full border ' + colors;
+    span.innerHTML = label +
+      ' <button type="button" onclick="removeMime(\'' + key + '\', \'' + mime + '\')" class="ml-0.5 transition">' +
+      '<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg></button>';
+    container.appendChild(span);
+  });
+}
+</script>
+
 <!-- Tab Navigation -->
 <div class="border-b border-slate-200 mb-6">
   <nav class="flex gap-1 -mb-px" role="tablist">
@@ -41,7 +101,7 @@
 
     {% for group_name in tab_group_names %}
       {% if group_name in groups %}
-    <section class="bg-white rounded-2xl shadow-sm border border-slate-100 mb-6 overflow-hidden">
+    <section class="bg-white rounded-2xl shadow-sm border border-slate-100 mb-6">
       <div class="px-6 py-4 border-b border-slate-100 bg-slate-50/60">
         <h2 class="text-base font-semibold text-[#191c1e] tracking-tight">{{ group_name }}</h2>
       </div>
@@ -87,6 +147,48 @@
             <span class="text-sm text-slate-500">
               {% if s.value == "true" %}활성화{% else %}비활성화{% endif %}
             </span>
+
+            {% elif s.setting_type == "mime_select" %}
+            {% set selected_mimes = s.value.split(",") if s.value else [] %}
+            <div class="flex-1" data-mime-select="{{ s.key }}">
+              <input type="hidden" name="{{ s.key }}" value="{{ s.value }}" data-mime-hidden="{{ s.key }}" />
+              <!-- Dropdown -->
+              <div class="relative">
+                <button
+                  type="button"
+                  onclick="toggleMimeDropdown('{{ s.key }}')"
+                  class="w-full text-left text-sm border border-slate-200 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition flex items-center justify-between"
+                >
+                  <span class="text-slate-400">파일 형식 선택...</span>
+                  <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5"/>
+                  </svg>
+                </button>
+                <div data-mime-dropdown="{{ s.key }}" class="hidden absolute z-20 mt-1 w-full bg-white border border-slate-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                  {% for mime_val, mime_label in available_mime_types %}
+                  <label class="flex items-center gap-2 px-3 py-2 hover:bg-slate-50 cursor-pointer text-sm">
+                    <input
+                      type="checkbox"
+                      value="{{ mime_val }}"
+                      {% if mime_val in selected_mimes %}checked{% endif %}
+                      onchange="updateMimeSelection('{{ s.key }}')"
+                      class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-400"
+                    />
+                    <span class="font-medium text-slate-700">{{ mime_label }}</span>
+                    <span class="text-xs text-slate-400">{{ mime_val }}</span>
+                  </label>
+                  {% endfor %}
+                </div>
+              </div>
+              <!-- Selected badges (rendered by JS on load) -->
+              <div data-mime-badges="{{ s.key }}" class="flex flex-wrap gap-2 mt-2"></div>
+              <script>
+                (function() {
+                  var selected = '{{ s.value }}'.split(',').filter(function(v) { return v.trim(); });
+                  renderMimeBadges('{{ s.key }}', selected);
+                })();
+              </script>
+            </div>
 
             {% else %}
             <input
