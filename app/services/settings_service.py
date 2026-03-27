@@ -8,18 +8,23 @@ from app.models.tables import AppSetting
 
 AVAILABLE_MODELS: dict[str, list[tuple[str, str]]] = {
     "OpenAI": [
-        ("openai/gpt-4.1", "GPT-4.1"),
+        ("openai/gpt-5.4-mini", "GPT-5.4 Mini"),
+        ("openai/gpt-5.4-nano", "GPT-5.4 Nano"),
         ("openai/gpt-4.1-mini", "GPT-4.1 Mini"),
         ("openai/gpt-4.1-nano", "GPT-4.1 Nano"),
-        ("openai/o4-mini", "o4 Mini"),
+        ("openai/gpt-4o", "GPT-4o"),
     ],
     "Google": [
-        ("google_genai/gemini-2.5-pro", "Gemini 2.5 Pro"),
-        ("google_genai/gemini-2.5-flash", "Gemini 2.5 Flash"),
+        ("google_genai/gemini-3.1-pro-preview", "Gemini 3.1 Pro"),
+        ("google_genai/gemini-3.1-flash-lite-preview", "Gemini 3.1 Flash-Lite"),
+        ("google_genai/gemini-3-flash-preview", "Gemini 3 Flash"),
     ],
     "xAI": [
-        ("xai/grok-3", "Grok 3"),
-        ("xai/grok-3-mini", "Grok 3 Mini"),
+        ("xai/grok-4.20-0309-reasoning", "Grok 4.20 Reasoning"),
+        ("xai/grok-4.20-0309-non-reasoning", "Grok 4.20 Non-Reasoning"),
+        ("xai/grok-4.20-multi-agent-0309", "Grok 4.20 Multi-Agent"),
+        ("xai/grok-4-1-fast-reasoning", "Grok 4.1 Fast Reasoning"),
+        ("xai/grok-4-1-fast-non-reasoning", "Grok 4.1 Fast Non-Reasoning"),
     ],
 }
 
@@ -41,22 +46,22 @@ class SettingDefinition:
 SETTING_DEFINITIONS: dict[str, SettingDefinition] = {
     "model": SettingDefinition(
         key="model",
-        default="openai/gpt-4.1",
-        description="에이전트가 사용하는 기본 LLM 모델",
+        default="openai/gpt-4.1-mini",
+        description="에이전트 메인 대화에 사용하는 LLM 모델",
         group="Agent Configuration",
         setting_type="model_select",
     ),
     "summarization_model": SettingDefinition(
         key="summarization_model",
         default="openai/gpt-4.1-mini",
-        description="대화 요약에 사용하는 LLM 모델",
+        description="대화 요약 + 제목 생성에 사용하는 LLM 모델",
         group="Agent Configuration",
         setting_type="model_select",
     ),
     "rag_grading_model": SettingDefinition(
         key="rag_grading_model",
         default="openai/gpt-4.1-mini",
-        description="RAG 문서 관련성 평가에 사용하는 LLM 모델",
+        description="RAG 문서 평가 + 쿼리 재작성에 사용하는 LLM 모델",
         group="Agent Configuration",
         setting_type="model_select",
     ),
