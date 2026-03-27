@@ -147,7 +147,7 @@ SETTING_DEFINITIONS: dict[str, SettingDefinition] = {
         key="enable_raptor",
         default="true",
         description="RAPTOR 계층적 문서 인덱싱 활성화 여부",
-        group="기능 플래그",
+        group="파싱 설정",
         setting_type="boolean",
     ),
     "enable_hybrid_search": SettingDefinition(
