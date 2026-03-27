@@ -75,7 +75,7 @@ AVAILABLE_MODELS: dict[str, list[tuple[str, str]]] = {
 # Tab → group mapping for the settings UI
 TAB_GROUPS: list[tuple[str, str, list[str]]] = [
     ("agent", "에이전트", ["에이전트 설정", "기능 플래그"]),
-    ("parsing", "문서 파싱", ["파싱 설정"]),
+    ("parsing", "문서 파싱", ["동기화", "청크", "RAPTOR", "키워드"]),
     ("system", "시스템", ["업로드 설정", "보안 설정"]),
 ]
 
@@ -147,7 +147,7 @@ SETTING_DEFINITIONS: dict[str, SettingDefinition] = {
         key="enable_raptor",
         default="true",
         description="RAPTOR 계층적 문서 인덱싱 활성화 여부",
-        group="파싱 설정",
+        group="RAPTOR",
         setting_type="boolean",
     ),
     "enable_hybrid_search": SettingDefinition(
@@ -191,49 +191,49 @@ SETTING_DEFINITIONS: dict[str, SettingDefinition] = {
         key="parse_poll_interval_seconds",
         default="10",
         description="백그라운드 파싱 상태 동기화 폴링 간격 (초)",
-        group="파싱 설정",
+        group="동기화",
         setting_type="text",
     ),
     "parse_max_concurrent_checks": SettingDefinition(
         key="parse_max_concurrent_checks",
         default="20",
         description="동기화 사이클당 최대 동시 상태 조회 수",
-        group="파싱 설정",
+        group="동기화",
         setting_type="text",
     ),
     "chunk_size": SettingDefinition(
         key="chunk_size",
         default="1000",
         description="텍스트 청크 크기 (문자 수). 파싱 서버에 전달됩니다.",
-        group="파싱 설정",
+        group="청크",
         setting_type="text",
     ),
     "chunk_overlap": SettingDefinition(
         key="chunk_overlap",
         default="200",
         description="텍스트 청크 오버랩 (문자 수). 파싱 서버에 전달됩니다.",
-        group="파싱 설정",
+        group="청크",
         setting_type="text",
     ),
     "max_chunks_for_raptor": SettingDefinition(
         key="max_chunks_for_raptor",
         default="2000",
         description="RAPTOR 처리 최대 청크 수",
-        group="파싱 설정",
+        group="RAPTOR",
         setting_type="text",
     ),
     "entity_extractor_max_concurrency": SettingDefinition(
         key="entity_extractor_max_concurrency",
         default="3",
         description="이미지/테이블 엔티티 추출 최대 동시 요청 수",
-        group="파싱 설정",
+        group="RAPTOR",
         setting_type="text",
     ),
     "enable_keyword_extraction": SettingDefinition(
         key="enable_keyword_extraction",
         default="true",
         description="키워드 자동 추출 활성화 여부",
-        group="파싱 설정",
+        group="키워드",
         setting_type="boolean",
     ),
     # -- 보안 설정 --
