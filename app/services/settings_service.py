@@ -233,7 +233,7 @@ SETTING_DEFINITIONS: dict[str, SettingDefinition] = {
         key="enable_keyword_extraction",
         default="true",
         description="키워드 자동 추출 활성화 여부",
-        group="기능 플래그",
+        group="파싱 설정",
         setting_type="boolean",
     ),
     # -- 보안 설정 --
