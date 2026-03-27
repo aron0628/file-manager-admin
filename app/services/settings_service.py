@@ -50,6 +50,7 @@ def _refresh_cache_key(key: str, value: str) -> None:
     if key in SETTING_DEFINITIONS:
         _cache[key] = value
 
+
 AVAILABLE_MODELS: dict[str, list[tuple[str, str]]] = {
     "OpenAI": [
         ("openai/gpt-5.4-mini", "GPT-5.4 Mini"),
@@ -75,7 +76,7 @@ AVAILABLE_MODELS: dict[str, list[tuple[str, str]]] = {
 # Tab → group mapping for the settings UI
 TAB_GROUPS: list[tuple[str, str, list[str]]] = [
     ("agent", "에이전트", ["에이전트 설정", "기능 플래그"]),
-    ("parsing", "문서 파싱", ["동기화", "청크", "RAPTOR", "키워드"]),
+    ("parsing", "문서 파싱", ["LLM 모델", "동기화", "청크", "RAPTOR", "키워드"]),
     ("system", "시스템", ["업로드 설정", "보안 설정"]),
 ]
 
@@ -194,6 +195,20 @@ SETTING_DEFINITIONS: dict[str, SettingDefinition] = {
         setting_type="mime_select",
     ),
     # -- 파싱 설정 --
+    "vision_model": SettingDefinition(
+        key="vision_model",
+        default="openai/gpt-4o",
+        description="이미지/테이블 엔티티 추출에 사용하는 Vision LLM 모델",
+        group="LLM 모델",
+        setting_type="model_select",
+    ),
+    "raptor_summarization_model": SettingDefinition(
+        key="raptor_summarization_model",
+        default="openai/gpt-4.1-mini",
+        description="RAPTOR 클러스터 요약에 사용하는 텍스트 LLM 모델",
+        group="LLM 모델",
+        setting_type="model_select",
+    ),
     "parse_poll_interval_seconds": SettingDefinition(
         key="parse_poll_interval_seconds",
         default="10",
