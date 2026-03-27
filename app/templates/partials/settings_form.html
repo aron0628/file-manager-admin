@@ -6,6 +6,7 @@
   {% set _ = groups[s.group].append(s) %}
 {% endfor %}
 
+<form id="settings-form" hx-post="/api/settings/batch" hx-target="#settings-form-container" hx-swap="innerHTML">
 {% for group_name, group_settings in groups.items() %}
 <section class="bg-white rounded-2xl shadow-sm border border-slate-100 mb-6 overflow-hidden">
   <div class="px-6 py-4 border-b border-slate-100 bg-slate-50/60">
@@ -20,17 +21,11 @@
         <p class="text-xs text-[#6b7280] mt-0.5">{{ s.description }}</p>
       </div>
 
-      <!-- Input + feedback -->
+      <!-- Input -->
       <div class="flex-1 flex items-center gap-3">
         {% if s.setting_type == "model_select" %}
         <select
-          name="value"
-          hx-put="/api/settings/{{ s.key }}"
-          hx-encoding="application/x-www-form-urlencoded"
-          hx-target="#feedback-{{ s.key }}"
-          hx-swap="innerHTML"
-          hx-trigger="change"
-          hx-include="[name='value']"
+          name="{{ s.key }}"
           class="flex-1 text-sm border border-slate-200 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition"
         >
           {% for provider, models in available_models.items() %}
@@ -43,46 +38,60 @@
         </select>
 
         {% elif s.setting_type == "boolean" %}
+        <!-- hidden fallback for unchecked state -->
+        <input type="hidden" name="{{ s.key }}" value="false" />
         <label class="relative inline-flex items-center cursor-pointer">
           <input
             type="checkbox"
-            name="value"
+            name="{{ s.key }}"
             value="true"
             {% if s.value == "true" %}checked{% endif %}
-            hx-put="/api/settings/{{ s.key }}"
-            hx-encoding="application/x-www-form-urlencoded"
-            hx-target="#feedback-{{ s.key }}"
-            hx-swap="innerHTML"
-            hx-trigger="change"
-            hx-vals='js:{"value": document.getElementById("toggle-{{ s.key }}").checked ? "true" : "false"}'
             id="toggle-{{ s.key }}"
             class="sr-only peer"
           />
           <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-indigo-400 rounded-full peer peer-checked:bg-indigo-600 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full"></div>
         </label>
-        <span class="text-sm text-slate-500" id="toggle-label-{{ s.key }}">
+        <span class="text-sm text-slate-500">
           {% if s.value == "true" %}활성화{% else %}비활성화{% endif %}
         </span>
 
         {% else %}
         <input
           type="text"
-          name="value"
+          name="{{ s.key }}"
           value="{{ s.value }}"
-          hx-put="/api/settings/{{ s.key }}"
-          hx-encoding="application/x-www-form-urlencoded"
-          hx-target="#feedback-{{ s.key }}"
-          hx-swap="innerHTML"
-          hx-trigger="blur"
           class="flex-1 text-sm border border-slate-200 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition"
         />
         {% endif %}
-
-        <!-- Feedback slot -->
-        <span id="feedback-{{ s.key }}" class="text-xs w-20 flex-shrink-0"></span>
       </div>
     </div>
     {% endfor %}
   </div>
 </section>
 {% endfor %}
+
+<!-- Save button -->
+<div class="flex justify-end items-center mt-4 mb-8 gap-3">
+  {% if save_success %}
+  <span id="settings-save-feedback" class="inline-flex items-center gap-1 text-emerald-600 font-medium text-sm animate-fade-in">
+    <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+    </svg>
+    저장 완료
+  </span>
+  <script>
+    (function() {
+      var el = document.getElementById('settings-save-feedback');
+      if (el) { setTimeout(function() { el.style.opacity = '0'; el.style.transition = 'opacity 0.5s'; }, 3000); }
+    })();
+  </script>
+  {% endif %}
+  <button
+    type="submit"
+    class="inline-flex items-center px-6 py-2.5 bg-indigo-600 text-white text-sm font-semibold rounded-lg shadow-sm hover:bg-indigo-700 active:scale-95 transition-transform focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-offset-2"
+  >
+    <span class="material-symbols-outlined text-[18px] mr-2">save</span>
+    저장
+  </button>
+</div>
+</form>

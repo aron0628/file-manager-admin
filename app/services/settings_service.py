@@ -48,63 +48,63 @@ SETTING_DEFINITIONS: dict[str, SettingDefinition] = {
         key="model",
         default="openai/gpt-4.1-mini",
         description="에이전트 메인 대화에 사용하는 LLM 모델",
-        group="Agent Configuration",
+        group="에이전트 설정",
         setting_type="model_select",
     ),
     "summarization_model": SettingDefinition(
         key="summarization_model",
         default="openai/gpt-4.1-mini",
         description="대화 요약 + 제목 생성에 사용하는 LLM 모델",
-        group="Agent Configuration",
+        group="에이전트 설정",
         setting_type="model_select",
     ),
     "rag_grading_model": SettingDefinition(
         key="rag_grading_model",
         default="openai/gpt-4.1-mini",
         description="RAG 문서 평가 + 쿼리 재작성에 사용하는 LLM 모델",
-        group="Agent Configuration",
+        group="에이전트 설정",
         setting_type="model_select",
     ),
     "max_search_results": SettingDefinition(
         key="max_search_results",
         default="10",
         description="검색 도구가 반환하는 최대 결과 수",
-        group="Agent Configuration",
+        group="에이전트 설정",
         setting_type="text",
     ),
     "summary_message_threshold": SettingDefinition(
         key="summary_message_threshold",
         default="20",
         description="대화 요약을 트리거하는 메시지 수 임계값",
-        group="Agent Configuration",
+        group="에이전트 설정",
         setting_type="text",
     ),
     "enable_raptor": SettingDefinition(
         key="enable_raptor",
         default="true",
         description="RAPTOR 계층적 문서 인덱싱 활성화 여부",
-        group="Feature Flags",
+        group="기능 플래그",
         setting_type="boolean",
     ),
     "enable_hybrid_search": SettingDefinition(
         key="enable_hybrid_search",
         default="true",
         description="하이브리드 검색(벡터 + BM25) 활성화 여부",
-        group="Feature Flags",
+        group="기능 플래그",
         setting_type="boolean",
     ),
     "hybrid_alpha": SettingDefinition(
         key="hybrid_alpha",
         default="0.7",
         description="하이브리드 검색에서 벡터 검색 가중치 (0.0~1.0)",
-        group="Feature Flags",
+        group="기능 플래그",
         setting_type="text",
     ),
     "bm25_top_k": SettingDefinition(
         key="bm25_top_k",
         default="20",
         description="BM25 키워드 검색에서 반환할 상위 결과 수",
-        group="Feature Flags",
+        group="기능 플래그",
         setting_type="text",
     ),
 }
@@ -175,6 +175,26 @@ async def seed_defaults(db: AsyncSession) -> None:
 
     for key, defn in SETTING_DEFINITIONS.items():
         if key not in existing_keys:
+            db.add(
+                AppSetting(
+                    key=key,
+                    value=defn.default,
+                    description=defn.description,
+                )
+            )
+    await db.commit()
+
+
+async def reset_to_defaults(db: AsyncSession) -> None:
+    """Reset ALL settings to their default values, overwriting existing values."""
+    result = await db.execute(select(AppSetting))
+    existing: dict[str, AppSetting] = {row.key: row for row in result.scalars().all()}
+
+    for key, defn in SETTING_DEFINITIONS.items():
+        row = existing.get(key)
+        if row is not None:
+            row.value = defn.default
+        else:
             db.add(
                 AppSetting(
                     key=key,
