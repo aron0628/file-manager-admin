@@ -93,7 +93,7 @@ AVAILABLE_MIME_TYPES: list[tuple[str, str]] = [
 ]
 
 MODEL_SELECTOR_KEYS = {"model", "summarization_model", "rag_grading_model"}
-BOOLEAN_KEYS = {"enable_raptor", "enable_hybrid_search"}
+BOOLEAN_KEYS = {"enable_raptor", "enable_hybrid_search", "enable_keyword_extraction"}
 
 
 @dataclass
@@ -214,6 +214,27 @@ SETTING_DEFINITIONS: dict[str, SettingDefinition] = {
         description="텍스트 청크 오버랩 (문자 수). 파싱 서버에 전달됩니다.",
         group="파싱 설정",
         setting_type="text",
+    ),
+    "max_chunks_for_raptor": SettingDefinition(
+        key="max_chunks_for_raptor",
+        default="2000",
+        description="RAPTOR 처리 최대 청크 수",
+        group="파싱 설정",
+        setting_type="text",
+    ),
+    "entity_extractor_max_concurrency": SettingDefinition(
+        key="entity_extractor_max_concurrency",
+        default="3",
+        description="이미지/테이블 엔티티 추출 최대 동시 요청 수",
+        group="파싱 설정",
+        setting_type="text",
+    ),
+    "enable_keyword_extraction": SettingDefinition(
+        key="enable_keyword_extraction",
+        default="true",
+        description="키워드 자동 추출 활성화 여부",
+        group="기능 플래그",
+        setting_type="boolean",
     ),
     # -- 보안 설정 --
     "session_expire_hours": SettingDefinition(
