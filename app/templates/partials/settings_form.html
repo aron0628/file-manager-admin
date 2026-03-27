@@ -6,92 +6,155 @@
   {% set _ = groups[s.group].append(s) %}
 {% endfor %}
 
-<form id="settings-form" hx-post="/api/settings/batch" hx-target="#settings-form-container" hx-swap="innerHTML">
-{% for group_name, group_settings in groups.items() %}
-<section class="bg-white rounded-2xl shadow-sm border border-slate-100 mb-6 overflow-hidden">
-  <div class="px-6 py-4 border-b border-slate-100 bg-slate-50/60">
-    <h2 class="text-base font-semibold text-[#191c1e] tracking-tight">{{ group_name }}</h2>
-  </div>
-  <div class="divide-y divide-slate-100">
-    {% for s in group_settings %}
-    <div class="px-6 py-5 flex flex-col sm:flex-row sm:items-center gap-3">
-      <!-- Label + description -->
-      <div class="sm:w-72 flex-shrink-0">
-        <p class="text-sm font-semibold text-[#191c1e]">{{ s.key }}</p>
-        <p class="text-xs text-[#6b7280] mt-0.5">{{ s.description }}</p>
-      </div>
+{% set current_tab = active_tab if active_tab is defined else "agent" %}
 
-      <!-- Input -->
-      <div class="flex-1 flex items-center gap-3">
-        {% if s.setting_type == "model_select" %}
-        <select
-          name="{{ s.key }}"
-          class="flex-1 text-sm border border-slate-200 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition"
-        >
-          {% for provider, models in available_models.items() %}
-          <optgroup label="{{ provider }}">
-            {% for val, label in models %}
-            <option value="{{ val }}" {% if s.value == val %}selected{% endif %}>{{ label }}</option>
-            {% endfor %}
-          </optgroup>
-          {% endfor %}
-        </select>
-
-        {% elif s.setting_type == "boolean" %}
-        <!-- hidden fallback for unchecked state -->
-        <input type="hidden" name="{{ s.key }}" value="false" />
-        <label class="relative inline-flex items-center cursor-pointer">
-          <input
-            type="checkbox"
-            name="{{ s.key }}"
-            value="true"
-            {% if s.value == "true" %}checked{% endif %}
-            id="toggle-{{ s.key }}"
-            class="sr-only peer"
-          />
-          <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-indigo-400 rounded-full peer peer-checked:bg-indigo-600 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full"></div>
-        </label>
-        <span class="text-sm text-slate-500">
-          {% if s.value == "true" %}활성화{% else %}비활성화{% endif %}
-        </span>
-
+<!-- Tab Navigation -->
+<div class="border-b border-slate-200 mb-6">
+  <nav class="flex gap-1 -mb-px" role="tablist">
+    {% for tab_id, tab_label, tab_group_names in tab_groups %}
+    <button
+      type="button"
+      role="tab"
+      data-tab="{{ tab_id }}"
+      onclick="switchSettingsTab('{{ tab_id }}')"
+      class="settings-tab px-5 py-3 text-sm font-semibold rounded-t-lg transition-colors
+        {% if tab_id == current_tab %}
+          border-b-2 border-indigo-600 text-indigo-600 bg-white
         {% else %}
-        <input
-          type="text"
-          name="{{ s.key }}"
-          value="{{ s.value }}"
-          class="flex-1 text-sm border border-slate-200 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition"
-        />
-        {% endif %}
-      </div>
-    </div>
+          text-slate-500 hover:text-slate-700 hover:bg-slate-50
+        {% endif %}"
+    >
+      {{ tab_label }}
+    </button>
     {% endfor %}
-  </div>
-</section>
+  </nav>
+</div>
+
+<!-- Tab Panels (each with its own form) -->
+{% for tab_id, tab_label, tab_group_names in tab_groups %}
+<div
+  data-tab-panel="{{ tab_id }}"
+  class="settings-tab-panel {% if tab_id != current_tab %}hidden{% endif %}"
+>
+  <form hx-post="/api/settings/batch" hx-target="#settings-form-container" hx-swap="innerHTML">
+    <input type="hidden" name="_active_tab" value="{{ tab_id }}" />
+
+    {% for group_name in tab_group_names %}
+      {% if group_name in groups %}
+    <section class="bg-white rounded-2xl shadow-sm border border-slate-100 mb-6 overflow-hidden">
+      <div class="px-6 py-4 border-b border-slate-100 bg-slate-50/60">
+        <h2 class="text-base font-semibold text-[#191c1e] tracking-tight">{{ group_name }}</h2>
+      </div>
+      <div class="divide-y divide-slate-100">
+        {% for s in groups[group_name] %}
+        <div class="px-6 py-5 flex flex-col sm:flex-row sm:items-center gap-3">
+          <!-- Label + description -->
+          <div class="sm:w-72 flex-shrink-0">
+            <p class="text-sm font-semibold text-[#191c1e]">{{ s.key }}</p>
+            <p class="text-xs text-[#6b7280] mt-0.5">{{ s.description }}</p>
+          </div>
+
+          <!-- Input -->
+          <div class="flex-1 flex items-center gap-3">
+            {% if s.setting_type == "model_select" %}
+            <select
+              name="{{ s.key }}"
+              class="flex-1 text-sm border border-slate-200 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition"
+            >
+              {% for provider, models in available_models.items() %}
+              <optgroup label="{{ provider }}">
+                {% for val, label in models %}
+                <option value="{{ val }}" {% if s.value == val %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+              </optgroup>
+              {% endfor %}
+            </select>
+
+            {% elif s.setting_type == "boolean" %}
+            <!-- hidden fallback for unchecked state -->
+            <input type="hidden" name="{{ s.key }}" value="false" />
+            <label class="relative inline-flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                name="{{ s.key }}"
+                value="true"
+                {% if s.value == "true" %}checked{% endif %}
+                id="toggle-{{ s.key }}"
+                class="sr-only peer"
+              />
+              <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-indigo-400 rounded-full peer peer-checked:bg-indigo-600 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full"></div>
+            </label>
+            <span class="text-sm text-slate-500">
+              {% if s.value == "true" %}활성화{% else %}비활성화{% endif %}
+            </span>
+
+            {% else %}
+            <input
+              type="text"
+              name="{{ s.key }}"
+              value="{{ s.value }}"
+              class="flex-1 text-sm border border-slate-200 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition"
+            />
+            {% endif %}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </section>
+      {% endif %}
+    {% endfor %}
+
+    <!-- Save button -->
+    <div class="flex justify-end items-center mt-4 mb-8 gap-3">
+      {% if session_warning and tab_id == current_tab %}
+      <span id="settings-session-warning" class="inline-flex items-center gap-1 text-amber-600 font-medium text-sm animate-fade-in">
+        <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/>
+        </svg>
+        세션 만료 시간이 줄어들어 기존 로그인 세션이 만료될 수 있습니다.
+      </span>
+      {% endif %}
+      {% if save_success and tab_id == current_tab %}
+      <span id="settings-save-feedback" class="inline-flex items-center gap-1 text-emerald-600 font-medium text-sm animate-fade-in">
+        <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+        </svg>
+        저장 완료
+      </span>
+      <script>
+        (function() {
+          var el = document.getElementById('settings-save-feedback');
+          if (el) { setTimeout(function() { el.style.opacity = '0'; el.style.transition = 'opacity 0.5s'; }, 3000); }
+        })();
+      </script>
+      {% endif %}
+      <button
+        type="submit"
+        class="inline-flex items-center px-6 py-2.5 bg-indigo-600 text-white text-sm font-semibold rounded-lg shadow-sm hover:bg-indigo-700 active:scale-95 transition-transform focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-offset-2"
+      >
+        <span class="material-symbols-outlined text-[18px] mr-2">save</span>
+        저장
+      </button>
+    </div>
+  </form>
+</div>
 {% endfor %}
 
-<!-- Save button -->
-<div class="flex justify-end items-center mt-4 mb-8 gap-3">
-  {% if save_success %}
-  <span id="settings-save-feedback" class="inline-flex items-center gap-1 text-emerald-600 font-medium text-sm animate-fade-in">
-    <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-      <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
-    </svg>
-    저장 완료
-  </span>
-  <script>
-    (function() {
-      var el = document.getElementById('settings-save-feedback');
-      if (el) { setTimeout(function() { el.style.opacity = '0'; el.style.transition = 'opacity 0.5s'; }, 3000); }
-    })();
-  </script>
-  {% endif %}
-  <button
-    type="submit"
-    class="inline-flex items-center px-6 py-2.5 bg-indigo-600 text-white text-sm font-semibold rounded-lg shadow-sm hover:bg-indigo-700 active:scale-95 transition-transform focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-offset-2"
-  >
-    <span class="material-symbols-outlined text-[18px] mr-2">save</span>
-    저장
-  </button>
-</div>
-</form>
+<script>
+function switchSettingsTab(tabId) {
+  document.querySelectorAll('.settings-tab-panel').forEach(function(panel) {
+    panel.classList.add('hidden');
+  });
+  document.querySelectorAll('.settings-tab').forEach(function(tab) {
+    tab.classList.remove('border-b-2', 'border-indigo-600', 'text-indigo-600', 'bg-white');
+    tab.classList.add('text-slate-500');
+  });
+  var panel = document.querySelector('[data-tab-panel="' + tabId + '"]');
+  if (panel) panel.classList.remove('hidden');
+  var tab = document.querySelector('[data-tab="' + tabId + '"]');
+  if (tab) {
+    tab.classList.add('border-b-2', 'border-indigo-600', 'text-indigo-600', 'bg-white');
+    tab.classList.remove('text-slate-500');
+  }
+}
+</script>

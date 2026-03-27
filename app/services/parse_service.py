@@ -14,6 +14,7 @@ from app.config import settings
 from app.constants import ParseJobStatus
 from app.models.tables import File, ParseJob
 from app.schemas.file import ParseJobResponse
+from app.services.settings_service import get_cached_bool, get_cached_int
 
 logger = logging.getLogger(__name__)
 
@@ -45,7 +46,12 @@ async def start_parse(
         )
 
     try:
-        parse_result = await parser_client.parse_pdf(str(stored_path))
+        parse_result = await parser_client.parse_pdf(
+            str(stored_path),
+            enable_raptor=get_cached_bool("enable_raptor"),
+            chunk_size=get_cached_int("chunk_size") if get_cached_int("chunk_size") else None,
+            chunk_overlap=get_cached_int("chunk_overlap") if get_cached_int("chunk_overlap") else None,
+        )
     except FileNotFoundError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except httpx.ConnectError:

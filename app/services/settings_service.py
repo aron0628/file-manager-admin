@@ -6,6 +6,50 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.tables import AppSetting
 
+# ---------------------------------------------------------------------------
+# In-memory settings cache (loaded at startup, refreshed on every write)
+# ---------------------------------------------------------------------------
+_cache: dict[str, str] = {}
+
+
+def get_cached_value(key: str) -> str:
+    """Return the cached setting value, falling back to the definition default."""
+    if key in _cache:
+        return _cache[key]
+    defn = SETTING_DEFINITIONS.get(key)
+    return defn.default if defn else ""
+
+
+def get_cached_int(key: str) -> int:
+    """Convenience: return cached value as int."""
+    return int(get_cached_value(key))
+
+
+def get_cached_float(key: str) -> float:
+    """Convenience: return cached value as float."""
+    return float(get_cached_value(key))
+
+
+def get_cached_bool(key: str) -> bool:
+    """Convenience: return cached value as bool."""
+    return get_cached_value(key).lower() == "true"
+
+
+async def load_cache(db: AsyncSession) -> None:
+    """Load all settings into the in-memory cache. Call once at startup."""
+    global _cache
+    result = await db.execute(select(AppSetting))
+    rows = {row.key: row.value for row in result.scalars().all()}
+    # Start with defaults, then overlay DB values
+    _cache = {key: defn.default for key, defn in SETTING_DEFINITIONS.items()}
+    _cache.update({k: v for k, v in rows.items() if k in SETTING_DEFINITIONS})
+
+
+def _refresh_cache_key(key: str, value: str) -> None:
+    """Update a single key in the cache after a DB write."""
+    if key in SETTING_DEFINITIONS:
+        _cache[key] = value
+
 AVAILABLE_MODELS: dict[str, list[tuple[str, str]]] = {
     "OpenAI": [
         ("openai/gpt-5.4-mini", "GPT-5.4 Mini"),
@@ -27,6 +71,13 @@ AVAILABLE_MODELS: dict[str, list[tuple[str, str]]] = {
         ("xai/grok-4-1-fast-non-reasoning", "Grok 4.1 Fast Non-Reasoning"),
     ],
 }
+
+# Tab → group mapping for the settings UI
+TAB_GROUPS: list[tuple[str, str, list[str]]] = [
+    ("agent", "에이전트", ["에이전트 설정", "기능 플래그"]),
+    ("parsing", "문서 파싱", ["파싱 설정"]),
+    ("system", "시스템", ["업로드 설정", "보안 설정"]),
+]
 
 MODEL_SELECTOR_KEYS = {"model", "summarization_model", "rag_grading_model"}
 BOOLEAN_KEYS = {"enable_raptor", "enable_hybrid_search"}
@@ -107,6 +158,58 @@ SETTING_DEFINITIONS: dict[str, SettingDefinition] = {
         group="기능 플래그",
         setting_type="text",
     ),
+    # -- 업로드 설정 --
+    "max_upload_size_mb": SettingDefinition(
+        key="max_upload_size_mb",
+        default="100",
+        description="최대 업로드 파일 크기 (MB)",
+        group="업로드 설정",
+        setting_type="text",
+    ),
+    "allowed_mime_types": SettingDefinition(
+        key="allowed_mime_types",
+        default="application/pdf",
+        description="허용 MIME 타입 (쉼표로 구분, 예: application/pdf,image/png)",
+        group="업로드 설정",
+        setting_type="text",
+    ),
+    # -- 파싱 설정 --
+    "parse_poll_interval_seconds": SettingDefinition(
+        key="parse_poll_interval_seconds",
+        default="10",
+        description="백그라운드 파싱 상태 동기화 폴링 간격 (초)",
+        group="파싱 설정",
+        setting_type="text",
+    ),
+    "parse_max_concurrent_checks": SettingDefinition(
+        key="parse_max_concurrent_checks",
+        default="20",
+        description="동기화 사이클당 최대 동시 상태 조회 수",
+        group="파싱 설정",
+        setting_type="text",
+    ),
+    "chunk_size": SettingDefinition(
+        key="chunk_size",
+        default="1000",
+        description="텍스트 청크 크기 (문자 수). 파싱 서버에 전달됩니다.",
+        group="파싱 설정",
+        setting_type="text",
+    ),
+    "chunk_overlap": SettingDefinition(
+        key="chunk_overlap",
+        default="200",
+        description="텍스트 청크 오버랩 (문자 수). 파싱 서버에 전달됩니다.",
+        group="파싱 설정",
+        setting_type="text",
+    ),
+    # -- 보안 설정 --
+    "session_expire_hours": SettingDefinition(
+        key="session_expire_hours",
+        default="24",
+        description="세션 만료 시간 (시간 단위). 값을 줄이면 기존 로그인 세션이 즉시 만료됩니다.",
+        group="보안 설정",
+        setting_type="text",
+    ),
 }
 
 
@@ -166,6 +269,7 @@ async def upsert_setting(db: AsyncSession, key: str, value: str) -> None:
     else:
         row.value = value
     await db.commit()
+    _refresh_cache_key(key, value)
 
 
 async def seed_defaults(db: AsyncSession) -> None:
@@ -183,6 +287,7 @@ async def seed_defaults(db: AsyncSession) -> None:
                 )
             )
     await db.commit()
+    await load_cache(db)
 
 
 async def reset_to_defaults(db: AsyncSession) -> None:
@@ -203,3 +308,4 @@ async def reset_to_defaults(db: AsyncSession) -> None:
                 )
             )
     await db.commit()
+    await load_cache(db)

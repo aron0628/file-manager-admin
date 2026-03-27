@@ -10,9 +10,11 @@ from app.api import auth, files, parse
 from app.api.pages import router as pages_router
 from app.api.settings import router as settings_router
 from app.config import settings
+from app.database import AsyncSessionLocal
 from app.dependencies import _AuthRedirectException
 from app.schemas.file import HealthResponse
 from app.services.background_sync import background_sync_loop, resync_pending_jobs
+from app.services.settings_service import load_cache as load_settings_cache
 
 logging.basicConfig(
     level=logging.INFO,
@@ -25,6 +27,11 @@ logger = logging.getLogger(__name__)
 async def lifespan(app: FastAPI):
     # startup: AsyncDocumentParserClient 생명주기 관리
     from document_parser_client import AsyncDocumentParserClient
+
+    # Load settings cache from DB at startup
+    async with AsyncSessionLocal() as db:
+        await load_settings_cache(db)
+    logger.info("시스템 설정 캐시 로드 완료")
 
     try:
         async with AsyncDocumentParserClient(api_url=settings.PARSER_SERVER_URL) as client:

@@ -10,7 +10,10 @@ from app.services.settings_service import (
     AVAILABLE_MODELS,
     BOOLEAN_KEYS,
     SETTING_DEFINITIONS,
+    TAB_GROUPS,
     get_all_settings,
+    get_cached_value,
+    load_cache,
     seed_defaults,
     upsert_setting,
 )
@@ -34,6 +37,7 @@ async def settings_page(
             "user": user,
             "settings": all_settings,
             "available_models": AVAILABLE_MODELS,
+            "tab_groups": TAB_GROUPS,
             "active_nav": "settings",
         },
     )
@@ -53,6 +57,7 @@ async def settings_form_partial(
             "request": request,
             "settings": all_settings,
             "available_models": AVAILABLE_MODELS,
+            "tab_groups": TAB_GROUPS,
         },
     )
 
@@ -87,6 +92,11 @@ async def batch_update_settings(
 ) -> HTMLResponse:
     """Batch update all settings from the form (admin only)."""
     form_data = await request.form()
+    active_tab = form_data.get("_active_tab", "agent")
+
+    # Detect session_expire_hours decrease for warning
+    old_session_hours = get_cached_value("session_expire_hours")
+    session_warning = False
 
     for key in SETTING_DEFINITIONS:
         if key in form_data:
@@ -98,6 +108,11 @@ async def batch_update_settings(
                 value = values[-1] if values else "false"
             await upsert_setting(db, key, str(value))
 
+    # Check if session_expire_hours was decreased
+    new_session_hours = get_cached_value("session_expire_hours")
+    if int(new_session_hours) < int(old_session_hours):
+        session_warning = True
+
     all_settings = await get_all_settings(db)
     return templates.TemplateResponse(
         "partials/settings_form.html",
@@ -105,7 +120,10 @@ async def batch_update_settings(
             "request": request,
             "settings": all_settings,
             "available_models": AVAILABLE_MODELS,
+            "tab_groups": TAB_GROUPS,
             "save_success": True,
+            "session_warning": session_warning,
+            "active_tab": active_tab,
         },
     )
 
@@ -134,5 +152,6 @@ async def preview_defaults(
             "request": request,
             "settings": default_settings,
             "available_models": AVAILABLE_MODELS,
+            "tab_groups": TAB_GROUPS,
         },
     )

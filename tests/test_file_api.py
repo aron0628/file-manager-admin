@@ -67,13 +67,11 @@ async def test_upload_invalid_mime(authenticated_client: AsyncClient):
 
 @pytest.mark.asyncio
 async def test_upload_oversized(authenticated_client: AsyncClient):
-    """File exceeding MAX_UPLOAD_SIZE_MB returns 413."""
-    import app.config as cfg
+    """File exceeding max_upload_size_mb returns 413."""
+    from unittest.mock import patch
+    import app.services.settings_service as svc
 
-    original_max = cfg.settings.MAX_UPLOAD_SIZE_MB
-    cfg.settings.MAX_UPLOAD_SIZE_MB = 0  # 0 MB → any content fails
-
-    try:
+    with patch.dict(svc._cache, {"max_upload_size_mb": "0"}):
         oversized = make_pdf_bytes(10)
         response = await authenticated_client.post(
             "/api/files/upload",
@@ -81,8 +79,6 @@ async def test_upload_oversized(authenticated_client: AsyncClient):
             data={"category": "Uncategorized"},
         )
         assert response.status_code == 413
-    finally:
-        cfg.settings.MAX_UPLOAD_SIZE_MB = original_max
 
 
 # ---------------------------------------------------------------------------

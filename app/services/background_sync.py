@@ -11,6 +11,7 @@ from sqlalchemy import select
 
 from app.config import settings
 from app.constants import ACTIVE_PARSE_STATUSES, ParseJobStatus
+from app.services.settings_service import get_cached_int
 from app.database import AsyncSessionLocal
 from app.models.tables import ParseJob
 
@@ -49,7 +50,7 @@ def _map_parser_status(parser_status: str) -> str:
 
 async def _process_jobs_batch(parser_client, jobs: list[ParseJob]) -> None:
     """미완료 job 배치를 parser-server와 동기화."""
-    semaphore = asyncio.Semaphore(settings.PARSE_MAX_CONCURRENT_CHECKS)
+    semaphore = asyncio.Semaphore(get_cached_int("parse_max_concurrent_checks"))
     now = datetime.now(timezone.utc)
 
     async def sync_with_semaphore(job: ParseJob):
@@ -139,12 +140,12 @@ async def _process_jobs_batch(parser_client, jobs: list[ParseJob]) -> None:
 async def background_sync_loop(app) -> None:
     """백그라운드 동기화 루프. PARSE_POLL_INTERVAL_SECONDS 간격으로 미완료 job 동기화."""
     logger.info(
-        f"백그라운드 동기화 루프 시작 (폴링 간격: {settings.PARSE_POLL_INTERVAL_SECONDS}초)"
+        f"백그라운드 동기화 루프 시작 (폴링 간격: {get_cached_int('parse_poll_interval_seconds')}초)"
     )
 
     while True:
         try:
-            await asyncio.sleep(settings.PARSE_POLL_INTERVAL_SECONDS)
+            await asyncio.sleep(get_cached_int("parse_poll_interval_seconds"))
 
             parser_client = getattr(app.state, "parser_client", None)
             if parser_client is None:

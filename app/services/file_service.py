@@ -10,6 +10,7 @@ from sqlalchemy.orm import selectinload
 
 from app.config import settings
 from app.constants import Category
+from app.services.settings_service import get_cached_int, get_cached_value
 from app.models.tables import File
 from app.schemas.file import FileListResponse, FileResponse, FileUpdate
 
@@ -34,20 +35,22 @@ async def upload_file(
     category: Category,
     uploader: str = "Admin",
 ) -> FileResponse:
-    # MIME type validation
-    if file.content_type not in settings.ALLOWED_MIME_TYPES:
+    # MIME type validation (DB setting: comma-separated string)
+    allowed_types = [t.strip() for t in get_cached_value("allowed_mime_types").split(",")]
+    if file.content_type not in allowed_types:
         raise HTTPException(
             status_code=415,
-            detail=f"Unsupported media type: {file.content_type}. Allowed: {settings.ALLOWED_MIME_TYPES}",
+            detail=f"Unsupported media type: {file.content_type}. Allowed: {allowed_types}",
         )
 
-    # Read content and validate size
+    # Read content and validate size (DB setting)
     content = await file.read()
-    max_bytes = settings.MAX_UPLOAD_SIZE_MB * 1024 * 1024
+    max_upload_mb = get_cached_int("max_upload_size_mb")
+    max_bytes = max_upload_mb * 1024 * 1024
     if len(content) > max_bytes:
         raise HTTPException(
             status_code=413,
-            detail=f"파일이 너무 큽니다. 최대 {settings.MAX_UPLOAD_SIZE_MB}MB까지 업로드 가능합니다.",
+            detail=f"파일이 너무 큽니다. 최대 {max_upload_mb}MB까지 업로드 가능합니다.",
         )
 
     # Determine extension from original filename

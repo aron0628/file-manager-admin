@@ -8,10 +8,10 @@ from sqlalchemy import and_, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.config import settings
 from app.database import get_db
 from app.dependencies import require_admin, require_auth
 from app.models.tables import File, User
+from app.services.settings_service import get_cached_int
 
 router = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
@@ -87,7 +87,7 @@ async def index(
             "search": search or "",
             "file_type": file_type or "",
             "date_range": date_range or "",
-            "max_upload_size_mb": settings.MAX_UPLOAD_SIZE_MB,
+            "max_upload_size_mb": get_cached_int("max_upload_size_mb"),
             "active_nav": "files",
         },
     )
