@@ -12,15 +12,10 @@ class Settings(BaseSettings):
 
     UPLOAD_DIR: str = "uploads"
     PARSER_SERVER_URL: str = "http://localhost:9997"
-    MAX_UPLOAD_SIZE_MB: int = 100
-    ALLOWED_MIME_TYPES: list[str] = ["application/pdf"]
     PARSE_RESULT_DIR: str = "parse_results"
-    PARSE_POLL_INTERVAL_SECONDS: int = 10
-    PARSE_MAX_CONCURRENT_CHECKS: int = 20
 
     # Auth
     SECRET_KEY: str = "dev-secret-key-change-in-production"
-    SESSION_EXPIRE_HOURS: int = 24
 
 
 settings = Settings()
