@@ -171,6 +171,13 @@ SETTING_DEFINITIONS: dict[str, SettingDefinition] = {
         group="기능 플래그",
         setting_type="text",
     ),
+    "rag_max_distance": SettingDefinition(
+        key="rag_max_distance",
+        default="0.5",
+        description="RAG 벡터 검색 최대 코사인 거리 임계값 (0.0~2.0, 낮을수록 엄격)",
+        group="기능 플래그",
+        setting_type="text",
+    ),
     # -- 업로드 설정 --
     "max_upload_size_mb": SettingDefinition(
         key="max_upload_size_mb",
