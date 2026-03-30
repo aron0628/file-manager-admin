@@ -1,3 +1,7 @@
+import logging
+import os
+
+import httpx
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
@@ -18,6 +22,28 @@ from app.services.settings_service import (
     seed_defaults,
     upsert_setting,
 )
+
+_logger = logging.getLogger(__name__)
+
+_AGENT_API_URL = os.environ.get("LANGGRAPH_API_URL", "http://localhost:2024")
+
+
+async def _notify_agent_cache_invalidation() -> None:
+    """Notify react-agent to invalidate its settings cache.
+
+    Fire-and-forget: failures are logged but never block the admin response.
+    """
+    url = f"{_AGENT_API_URL}/invalidate-settings-cache"
+    try:
+        async with httpx.AsyncClient() as client:
+            resp = await client.post(url, timeout=3.0)
+            _logger.info(
+                "[settings] agent cache invalidation: %s %s", resp.status_code, url
+            )
+    except Exception:
+        _logger.warning(
+            "[settings] failed to notify agent for cache invalidation", exc_info=True
+        )
 
 router = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
@@ -81,6 +107,8 @@ async def update_setting(
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e)) from e
 
+    await _notify_agent_cache_invalidation()
+
     return templates.TemplateResponse(
         "partials/settings_save_feedback.html",
         {"request": request, "key": key, "success": True},
@@ -115,6 +143,8 @@ async def batch_update_settings(
     new_session_hours = get_cached_value("session_expire_hours")
     if int(new_session_hours) < int(old_session_hours):
         session_warning = True
+
+    await _notify_agent_cache_invalidation()
 
     all_settings = await get_all_settings(db)
     return templates.TemplateResponse(
