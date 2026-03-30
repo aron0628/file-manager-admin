@@ -144,6 +144,13 @@ SETTING_DEFINITIONS: dict[str, SettingDefinition] = {
         group="에이전트 설정",
         setting_type="text",
     ),
+    "show_model_name": SettingDefinition(
+        key="show_model_name",
+        default="true",
+        description="채팅 응답에 사용된 모델명 표시 여부",
+        group="에이전트 설정",
+        setting_type="boolean",
+    ),
     "enable_raptor": SettingDefinition(
         key="enable_raptor",
         default="true",
