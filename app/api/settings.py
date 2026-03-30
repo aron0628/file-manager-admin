@@ -40,6 +40,10 @@ async def _notify_agent_cache_invalidation() -> None:
             _logger.info(
                 "[settings] agent cache invalidation: %s %s", resp.status_code, url
             )
+    except httpx.ConnectError:
+        _logger.info(
+            "[settings] agent not reachable for cache invalidation (skipped): %s", url
+        )
     except Exception:
         _logger.warning(
             "[settings] failed to notify agent for cache invalidation", exc_info=True
