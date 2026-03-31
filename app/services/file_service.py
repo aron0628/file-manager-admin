@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.config import settings
-from app.constants import Category
+from app.constants import Category, UserRole
 from app.services.settings_service import get_cached_int, get_cached_value
 from app.models.tables import File
 from app.schemas.file import FileListResponse, FileResponse, FileUpdate
@@ -34,6 +34,7 @@ async def upload_file(
     file: UploadFile,
     category: Category,
     uploader: str = "Admin",
+    owner_id: str | None = None,
 ) -> FileResponse:
     # MIME type validation (DB setting: comma-separated string)
     allowed_types = [t.strip() for t in get_cached_value("allowed_mime_types").split(",")]
@@ -78,6 +79,7 @@ async def upload_file(
         mime_type=file.content_type,
         category=category.value,
         uploader=uploader,
+        owner_id=owner_id,
     )
     db.add(db_file)
     await db.commit()
@@ -94,9 +96,15 @@ async def get_files(
     date_to: date | None = None,
     page: int = 1,
     per_page: int = 20,
+    current_user_id: str | None = None,
+    current_user_role: str | None = None,
 ) -> FileListResponse:
     stmt = select(File)
     filters = []
+
+    # 소유권 필터: admin이 아니면 본인 파일만
+    if current_user_role != UserRole.ADMIN.value and current_user_id:
+        filters.append(File.owner_id == current_user_id)
 
     if search:
         filters.append(File.filename.ilike(f"%{search}%"))
@@ -132,19 +140,37 @@ async def get_files(
     )
 
 
-async def get_file(db: AsyncSession, file_id: uuid.UUID) -> FileResponse:
+async def get_file(
+    db: AsyncSession,
+    file_id: uuid.UUID,
+    current_user_id: str | None = None,
+    current_user_role: str | None = None,
+) -> FileResponse:
     result = await db.execute(select(File).where(File.id == file_id))
     db_file = result.scalar_one_or_none()
     if db_file is None:
         raise HTTPException(status_code=404, detail="File not found")
+    # 소유권 검증: admin이 아니면 본인 파일만
+    if current_user_role != UserRole.ADMIN.value and current_user_id:
+        if db_file.owner_id != current_user_id:
+            raise HTTPException(status_code=404, detail="File not found")
     return FileResponse.model_validate(db_file)
 
 
-async def get_file_orm(db: AsyncSession, file_id: uuid.UUID) -> File:
+async def get_file_orm(
+    db: AsyncSession,
+    file_id: uuid.UUID,
+    current_user_id: str | None = None,
+    current_user_role: str | None = None,
+) -> File:
     result = await db.execute(select(File).where(File.id == file_id))
     db_file = result.scalar_one_or_none()
     if db_file is None:
         raise HTTPException(status_code=404, detail="File not found")
+    # 소유권 검증: admin이 아니면 본인 파일만
+    if current_user_role != UserRole.ADMIN.value and current_user_id:
+        if db_file.owner_id != current_user_id:
+            raise HTTPException(status_code=404, detail="File not found")
     return db_file
 
 
@@ -153,8 +179,10 @@ async def update_file(
     file_id: uuid.UUID,
     filename: str | None = None,
     category: str | None = None,
+    current_user_id: str | None = None,
+    current_user_role: str | None = None,
 ) -> FileResponse:
-    db_file = await get_file_orm(db, file_id)
+    db_file = await get_file_orm(db, file_id, current_user_id=current_user_id, current_user_role=current_user_role)
 
     if filename is not None:
         db_file.filename = filename
@@ -172,8 +200,14 @@ async def update_file(
     return FileResponse.model_validate(db_file)
 
 
-async def delete_file(db: AsyncSession, file_id: uuid.UUID, parser_client=None) -> None:
-    db_file = await get_file_orm(db, file_id)
+async def delete_file(
+    db: AsyncSession,
+    file_id: uuid.UUID,
+    parser_client=None,
+    current_user_id: str | None = None,
+    current_user_role: str | None = None,
+) -> None:
+    db_file = await get_file_orm(db, file_id, current_user_id=current_user_id, current_user_role=current_user_role)
 
     # parser-server 쪽 데이터 삭제 (document_embeddings, raptor_summaries 등)
     if parser_client is not None:

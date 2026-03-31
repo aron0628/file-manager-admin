@@ -32,6 +32,7 @@ class FileResponse(BaseModel):
     mime_type: str
     category: str
     uploader: str
+    owner_id: str | None = None
     created_at: datetime
     updated_at: datetime
 

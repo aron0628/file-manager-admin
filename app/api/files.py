@@ -10,7 +10,7 @@ from sqlalchemy import and_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.constants import Category
+from app.constants import Category, UserRole
 from app.database import get_db
 from app.dependencies import require_auth
 from app.models.tables import File as FileModel
@@ -41,6 +41,8 @@ async def list_files(
         date_to=date_to,
         page=page,
         per_page=per_page,
+        current_user_id=user.user_id,
+        current_user_role=user.role,
     )
 
 
@@ -52,15 +54,19 @@ async def upload_file(
     db: AsyncSession = Depends(get_db),
     user: UserModel = Depends(require_auth),
 ):
-    result = await file_service.upload_file(db, file, category, uploader=user.display_name)
+    result = await file_service.upload_file(db, file, category, uploader=user.display_name, owner_id=user.user_id)
 
     # HTMX 요청이면 파일 테이블 HTML partial 반환
     if request.headers.get("HX-Request"):
         stmt = select(FileModel).options(selectinload(FileModel.parse_jobs)).order_by(FileModel.created_at.desc()).limit(20)
+        total_stmt = select(FileModel)
+        # 소유권 필터: admin이 아니면 본인 파일만
+        if user.role != UserRole.ADMIN.value:
+            stmt = stmt.where(FileModel.owner_id == user.user_id)
+            total_stmt = total_stmt.where(FileModel.owner_id == user.user_id)
         db_result = await db.execute(stmt)
         files = db_result.scalars().all()
 
-        total_stmt = select(FileModel)
         total_result = await db.execute(total_stmt)
         total = len(total_result.scalars().all())
         total_pages = (total + 19) // 20 if total > 0 else 0
@@ -90,7 +96,7 @@ async def get_file(
     db: AsyncSession = Depends(get_db),
     user: UserModel = Depends(require_auth),
 ):
-    return await file_service.get_file(db, file_id)
+    return await file_service.get_file(db, file_id, current_user_id=user.user_id, current_user_role=user.role)
 
 
 @router.put("/{file_id}")
@@ -106,6 +112,8 @@ async def update_file(
         file_id,
         filename=body.filename,
         category=body.category.value if body.category else None,
+        current_user_id=user.user_id,
+        current_user_role=user.role,
     )
 
     # HTMX 요청이면 파일 행 HTML partial 반환
@@ -130,15 +138,19 @@ async def delete_file(
     user: UserModel = Depends(require_auth),
 ):
     parser_client = getattr(request.app.state, "parser_client", None)
-    await file_service.delete_file(db, file_id, parser_client=parser_client)
+    await file_service.delete_file(db, file_id, parser_client=parser_client, current_user_id=user.user_id, current_user_role=user.role)
 
     # HTMX 요청이면 갱신된 파일 테이블 HTML partial 반환
     if request.headers.get("HX-Request"):
         stmt = select(FileModel).options(selectinload(FileModel.parse_jobs)).order_by(FileModel.created_at.desc()).limit(20)
+        total_stmt = select(FileModel)
+        # 소유권 필터: admin이 아니면 본인 파일만
+        if user.role != UserRole.ADMIN.value:
+            stmt = stmt.where(FileModel.owner_id == user.user_id)
+            total_stmt = total_stmt.where(FileModel.owner_id == user.user_id)
         db_result = await db.execute(stmt)
         files = db_result.scalars().all()
 
-        total_stmt = select(FileModel)
         total_result = await db.execute(total_stmt)
         total = len(total_result.scalars().all())
         total_pages = (total + 19) // 20 if total > 0 else 0
@@ -168,7 +180,7 @@ async def download_file(
     db: AsyncSession = Depends(get_db),
     user: UserModel = Depends(require_auth),
 ):
-    db_file = await file_service.get_file_orm(db, file_id)
+    db_file = await file_service.get_file_orm(db, file_id, current_user_id=user.user_id, current_user_role=user.role)
     stored = Path(db_file.stored_path)
     if not stored.exists():
         raise HTTPException(status_code=404, detail="Physical file not found")

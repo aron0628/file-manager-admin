@@ -8,6 +8,7 @@ from sqlalchemy import and_, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from app.constants import UserRole
 from app.database import get_db
 from app.dependencies import require_admin, require_auth
 from app.models.tables import File, User
@@ -21,9 +22,15 @@ def _build_file_query(
     search: Optional[str],
     file_type: Optional[str],
     date_range: Optional[str],
+    current_user_id: Optional[str] = None,
+    current_user_role: Optional[str] = None,
 ):
     """Build SQLAlchemy WHERE conditions from filter params."""
     conditions = []
+
+    # 소유권 필터: admin이 아니면 본인 파일만
+    if current_user_role != UserRole.ADMIN.value and current_user_id:
+        conditions.append(File.owner_id == current_user_id)
 
     if search:
         conditions.append(File.filename.ilike(f"%{search}%"))
@@ -53,7 +60,7 @@ async def index(
     db: AsyncSession = Depends(get_db),
     user: User = Depends(require_auth),
 ):
-    conditions = _build_file_query(search, file_type, date_range)
+    conditions = _build_file_query(search, file_type, date_range, current_user_id=user.user_id, current_user_role=user.role)
 
     count_stmt = select(File)
     if conditions:
@@ -105,7 +112,7 @@ async def file_table_partial(
     user: User = Depends(require_auth),
 ):
     """HTMX partial endpoint - returns only the file table HTML."""
-    conditions = _build_file_query(search, file_type, date_range)
+    conditions = _build_file_query(search, file_type, date_range, current_user_id=user.user_id, current_user_role=user.role)
 
     count_stmt = select(File)
     if conditions:

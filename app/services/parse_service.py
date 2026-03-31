@@ -14,6 +14,7 @@ from app.config import settings
 from app.constants import ParseJobStatus
 from app.models.tables import File, ParseJob
 from app.schemas.file import ParseJobResponse
+from app.services import file_service
 from app.services.settings_service import get_cached_bool, get_cached_int
 
 logger = logging.getLogger(__name__)
@@ -25,12 +26,13 @@ async def start_parse(
     db: AsyncSession,
     file_id: uuid.UUID,
     parser_client=None,
+    current_user_id: str | None = None,
+    current_user_role: str | None = None,
 ) -> ParseJobResponse:
     """파싱 작업 시작: parser-server에 PDF 전달 후 parse_jobs 레코드 생성."""
-    result = await db.execute(select(File).where(File.id == file_id))
-    db_file = result.scalar_one_or_none()
-    if db_file is None:
-        raise HTTPException(status_code=404, detail="File not found")
+    db_file = await file_service.get_file_orm(
+        db, file_id, current_user_id=current_user_id, current_user_role=current_user_role
+    )
 
     if parser_client is None:
         raise HTTPException(
@@ -92,12 +94,19 @@ async def get_parse_status(
     db: AsyncSession,
     file_id: uuid.UUID,
     parser_client=None,
+    current_user_id: str | None = None,
+    current_user_role: str | None = None,
 ) -> ParseJobResponse:
     """
     파싱 상태 조회 - HTMX 폴링용 DB 캐시 반환.
     백그라운드 태스크가 parser-server와 동기화를 담당하므로 DB 상태만 반환.
     parser_client가 있어도 여기서는 DB 캐시만 반환 (read-through는 bg sync 담당).
     """
+    # 소유권 검증
+    await file_service.get_file_orm(
+        db, file_id, current_user_id=current_user_id, current_user_role=current_user_role
+    )
+
     result = await db.execute(
         select(ParseJob)
         .where(ParseJob.file_id == file_id)
@@ -115,8 +124,15 @@ async def get_parse_result(
     db: AsyncSession,
     file_id: uuid.UUID,
     parser_client=None,
+    current_user_id: str | None = None,
+    current_user_role: str | None = None,
 ) -> str:
     """완료된 파싱 결과의 ZIP 파일 경로 반환. result_path 없으면 parser-server에서 다운로드."""
+    # 소유권 검증
+    await file_service.get_file_orm(
+        db, file_id, current_user_id=current_user_id, current_user_role=current_user_role
+    )
+
     result = await db.execute(
         select(ParseJob)
         .where(ParseJob.file_id == file_id)
@@ -178,8 +194,15 @@ async def retry_raptor(
     db: AsyncSession,
     file_id: uuid.UUID,
     parser_client=None,
+    current_user_id: str | None = None,
+    current_user_role: str | None = None,
 ) -> ParseJobResponse:
     """완료된 파싱 작업에서 RAPTOR만 재실행 요청."""
+    # 소유권 검증
+    await file_service.get_file_orm(
+        db, file_id, current_user_id=current_user_id, current_user_role=current_user_role
+    )
+
     result = await db.execute(
         select(ParseJob)
         .where(ParseJob.file_id == file_id)
